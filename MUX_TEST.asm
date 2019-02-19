@@ -20,7 +20,7 @@ COLD:
 
 	ldi		ZH, HIGH(LINE)
 	ldi		ZL, LOW(LINE)
-	ldi		r16, $80
+	ldi		r16, $01
 	st		Z, r16
 
 	call	VMEM_INIT
@@ -60,12 +60,12 @@ MUX:
 	ldi		ZL, LOW(LINE)
 	ld		r17, Z
 
-	cpi		r17, $01
+	cpi		r17, $80
 	brne		NOT_0
-	ldi		r17, $80
+	ldi		r17, $01
 	rjmp		SPI_LCD
 NOT_0:
-	lsr		r17
+	lsl		r17
 SPI_LCD:
 	st		Z, r17
 	//BLUE
@@ -121,7 +121,7 @@ HW_INIT:
 	ldi		r17,(1<<DDB5)|(1<<DDB7)|(1<<DDB4)|(1<<DDB0)	; Set MOSI, SCK, SS, PB0  output, all others input
 	out		DDRB,r17
 												
-	ldi		r17,(1<<SPE)|(1<<MSTR)|(1<<SPR0)			      ; Enable SPI, Master, set clock rate fck/16
+	ldi		r17,(1<<SPE)|(1<<MSTR)|(0<<SPR0)			      ; Enable SPI, Master, set clock rate fck/4
 	out		SPCR,r17
 	cbi		PORTB, 0
 
