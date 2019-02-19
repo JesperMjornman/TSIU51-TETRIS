@@ -61,9 +61,9 @@ MUX:
 	ld		r17, Z
 
 	cpi		r17, $01
-	brne	NOT_0
+	brne		NOT_0
 	ldi		r17, $80
-	rjmp	SPI_LCD
+	rjmp		SPI_LCD
 NOT_0:
 	lsr		r17
 SPI_LCD:
@@ -107,7 +107,7 @@ SEND_BITS:
 	cbi		PORTB, 0
 
 	inc		MUXCOUNTER
-	sbrc	MUXCOUNTER, 3
+	sbrc		MUXCOUNTER, 3
 	clr		MUXCOUNTER
 
 	pop		r17
