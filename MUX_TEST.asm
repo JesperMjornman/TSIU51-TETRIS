@@ -7,8 +7,10 @@
 
 .def	MUXCOUNTER = r19
 .dseg
-VMEM:	.byte 8
+VMEM:	.byte 16
 LINE:	.byte 1
+POSX:	.byte 1
+POSY:   .byte 1
 .cseg
 
 COLD:				
@@ -27,47 +29,57 @@ COLD:
 	call	HW_INIT
 
 WARM:
-	rjmp	WARM
-
+	call	BUILD_BLOCK
+START:
+	rjmp	START
   ;-----------------------------
   ;--- VMEM initieras med värden
 VMEM_INIT:
 	ldi		ZH, HIGH(VMEM)
 	ldi		ZL, LOW(VMEM)
 	clr		r16
-
+	ldi		r17, $FF
 VMEM_SET:
-	st		Z+,	r16
+	st		Z+,	r17
 	inc		r16
 	sbrs	r16, 3
 	rjmp	VMEM_SET
+	inc		r16
+	dec		r17
+	st		Z+, r17
+	sbrs	r16, 7
+	rjmp	VMEM_SET
 	ret
   ;----------------------------
-  ;------ MUX
+  ;--MUX
   ;--USES: Z, r16, r17, MUXCOUNTER (r19)
 MUX:
 	push	ZH
 	push	ZL
 	push	r16
 	push	r17
+	push	r18
 
 	ldi		ZH, HIGH(VMEM)
 	ldi		ZL, LOW(VMEM)
 	add		ZL, MUXCOUNTER
 	ld		r16, Z
+	subi	ZL, -8
+	ld		r18, Z
 
 	ldi		ZH, HIGH(LINE)
 	ldi		ZL, LOW(LINE)
 	ld		r17, Z
 
-	cpi		r17, $80
-	brne		NOT_0
+
+/*	cpi		r17, $80
+	brne	NOT_0
 	ldi		r17, $01
-	rjmp		SPI_LCD
+	rjmp	SPI_LCD
 NOT_0:
 	lsl		r17
 SPI_LCD:
-	st		Z, r17
+	st		Z, r17*/
 	//BLUE
 	out		SPDR, r17
 	rcall	Wait_Transmit
@@ -93,7 +105,7 @@ SPI_LCD:
 	rcall	Wait_Transmit
 	//KOLUMN (Satta värden visas ej)	
 	;ld		r18, Z
-	out		SPDR, r16
+	out		SPDR, r18
 	rcall	Wait_Transmit
 
 	rjmp	SEND_BITS
@@ -107,15 +119,50 @@ SEND_BITS:
 	cbi		PORTB, 0
 
 	inc		MUXCOUNTER
-	sbrc		MUXCOUNTER, 3
+	sbrc	MUXCOUNTER, 3
 	clr		MUXCOUNTER
 
+	cpi		r17, $80
+	brne	NOT_0
+	ldi		r17, $01
+	rjmp	END_MUX
+NOT_0:
+	lsl		r17
+END_MUX:
+	st		Z, r17
+	pop		r18
 	pop		r17
 	pop		r16
 	pop		ZL
 	pop		ZH
 
 	reti
+
+BUILD_BLOCK:
+	push	ZH
+	push	ZL
+	push	r16
+	push	r17
+
+	ldi		r16, $EF
+	ldi		ZH, HIGH(POSX)
+	ldi		ZL, LOW(POSX)
+	st		Z, r16
+
+	clr	r17
+	ldi		ZH, HIGH(POSY)
+	ldi		ZL, LOW(POSY)
+	st		Z, r17
+
+	ldi		ZH, HIGH(VMEM)
+	ldi		ZL, LOW(VMEM)
+	st		Z, r16
+
+	pop		r17
+	pop		r16
+	pop		ZL
+	pop		ZH
+	ret
 
 HW_INIT:											
 	ldi		r17,(1<<DDB5)|(1<<DDB7)|(1<<DDB4)|(1<<DDB0)	; Set MOSI, SCK, SS, PB0  output, all others input
@@ -137,3 +184,6 @@ HW_INIT:
 	sei
 
 	ret
+
+LINECONVERTER:
+	.db $01, $02, $04, $08, $10, $20, $40, $80, $01, $02, $04, $08, $10, $20, $40, $80
