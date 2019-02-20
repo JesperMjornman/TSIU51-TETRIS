@@ -172,10 +172,12 @@ UPDATE_POS:
 	push	r16
 	push	r17
 	push	r18
-
+	
+	;ldi		r16, $FF
 	ldi		ZL, LOW(POSX)
 	ldi		ZH, HIGH(POSX)
-	ld		r16, Z	;$10 = FF - r16
+	ld		r16, Z	;r17
+	;sub		r16, r17
 	
 	ldi		ZL, LOW(POSY)
 	ldi		ZH, HIGH(POSY)
@@ -187,6 +189,7 @@ UPDATE_POS:
 	add		ZL, r17
 	ld		r17, Z
 	ori		r17, $10
+	;or		r17, r16
 	st		Z, r17
 END_UPDATE:
 	pop		r18
