@@ -2,6 +2,8 @@
 
 	.org	0
 	rjmp	COLD
+	.org	OVF1addr
+	rjmp	GRAVITY
 	.org	OVF0addr
 	rjmp	MUX
 
@@ -143,23 +145,78 @@ GRAVITY:
 	ldi		ZL, LOW(POSY)
 	ldi		ZH, HIGH(POSY)
 	ld		r17, Z
+	inc		r17
+	;sbrc	r17, 5
+	;clr	r17
+	st		Z, r17
 
 	ldi		ZL, LOW(VMEM)
 	ldi		ZH, HIGH(VMEM)
 	add		ZL, r17
 	ld		r17, Z
-	or		r17, r16
+	and		r17, r16
 	st		Z, r17
 
-	;call	UPDATE_POS
-	;call	CHECK_COLLISION
-
+	call	UPDATE_POS
+	call	CHECK_COLLISION
+	
 	pop		r17
 	pop		r16
 	pop		ZL
 	pop		ZH
 	reti
 
+UPDATE_POS:
+	push	ZH
+	push	ZL
+	push	r16
+	push	r17
+	push	r18
+
+	ldi		ZL, LOW(POSX)
+	ldi		ZH, HIGH(POSX)
+	ld		r16, Z	;$10 = FF - r16
+	
+	ldi		ZL, LOW(POSY)
+	ldi		ZH, HIGH(POSY)
+	ld		r17, Z
+	dec		r17
+
+	ldi		ZL, LOW(VMEM)
+	ldi		ZH, HIGH(VMEM)
+	add		ZL, r17
+	ld		r17, Z
+	ori		r17, $10
+	st		Z, r17
+END_UPDATE:
+	pop		r18
+	pop		r17
+	pop		r16
+	pop		ZL
+	pop		ZH
+	ret
+
+CHECK_COLLISION:
+	push	ZH
+	push	ZL
+	push	r17
+	push	r18
+
+	ldi		ZL, LOW(POSY)
+	ldi		ZH, HIGH(POSY)
+	ld		r17, Z
+
+	cpi		r17, $0F
+	brne	END_CHECK
+	dec		r17
+	call	BUILD_BLOCK
+
+END_CHECK:
+	pop		r18
+	pop		r17
+	pop		ZL
+	pop		ZH
+	ret
 
 BUILD_BLOCK:
 	push	ZH
@@ -197,8 +254,15 @@ HW_INIT:
 
 	ldi		r16, (1 << CS01)
 	out		TCCR0, r16
-	ldi		r16, (1 << TOIE0)
+	ldi		r16, (1 << CS11 | 0 << CS10 | 0 << CS12| 1 << WGM12)	;	fclk / 256
+	out		TCCR1B, r16	
+	ldi		r16, (1 << TOIE0 | 1 << OCIE1B)
 	out		TIMSK, r16
+
+	ldi		r17, $3D
+	ldi		r16, $09	
+	out		OCR1AH, r17		
+	out		OCR1AL, r16
 
 	ldi		r16, $FF
 	out		DDRA, r16								
