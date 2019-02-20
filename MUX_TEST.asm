@@ -71,15 +71,7 @@ MUX:
 	ldi		ZL, LOW(LINE)
 	ld		r17, Z
 
-
-/*	cpi		r17, $80
-	brne	NOT_0
-	ldi		r17, $01
-	rjmp	SPI_LCD
-NOT_0:
-	lsl		r17
 SPI_LCD:
-	st		Z, r17*/
 	//BLUE
 	out		SPDR, r17
 	rcall	Wait_Transmit
@@ -137,6 +129,37 @@ END_MUX:
 	pop		ZH
 
 	reti
+
+GRAVITY:
+	push	ZH
+	push	ZL
+	push	r16
+	push	r17
+
+	ldi		ZL, LOW(POSX)
+	ldi		ZH, HIGH(POSX)
+	ld		r16, Z
+
+	ldi		ZL, LOW(POSY)
+	ldi		ZH, HIGH(POSY)
+	ld		r17, Z
+
+	ldi		ZL, LOW(VMEM)
+	ldi		ZH, HIGH(VMEM)
+	add		ZL, r17
+	ld		r17, Z
+	or		r17, r16
+	st		Z, r17
+
+	;call	UPDATE_POS
+	;call	CHECK_COLLISION
+
+	pop		r17
+	pop		r16
+	pop		ZL
+	pop		ZH
+	reti
+
 
 BUILD_BLOCK:
 	push	ZH
