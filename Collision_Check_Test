@@ -1,0 +1,36 @@
+CHECK_COLLISION:
+	push	ZH
+	push	ZL
+	push	r17
+	push	r18
+
+  ldi   ZH, HIGH(POSX)
+  ldi   ZL, LOW(POSX)
+  ld    r18, Z
+
+	ldi		ZL, LOW(POSY)
+	ldi		ZH, HIGH(POSY)
+	ld		r17, Z
+  
+	cpi		r17, $0F
+	breq	HIT_DETECTED
+	
+  ldi   ZH, HIGH(VMEM)
+  ldi   ZL, LOW(VMEM)
+  inc   r17         ;Kolla raden under nuvarande prick
+  add   ZL, r17
+  ld    r17, Z
+  
+  swap  r18         ;$FF -> 00, $EF -> $10 etc
+  and   r17, r18
+  cpi   r17, 1
+  brne  END_CHECK
+  
+HIT_DETECTED:
+  call	BUILD_BLOCK
+END_CHECK:
+  pop   r18
+  pop   r17
+  pop   ZL
+  pop   ZH
+  ret
