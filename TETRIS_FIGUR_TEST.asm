@@ -10,6 +10,9 @@
 .def	MUXCOUNTER = r19
 .def	LOOPCOUNTER = r21
 .dseg
+  ;----------------------|
+  ;---	MEMORY LAYOUT ---|
+  ;----------------------|	
 VMEM:	.byte 16
 LINE:	.byte 1
 POSX:	.byte 4
