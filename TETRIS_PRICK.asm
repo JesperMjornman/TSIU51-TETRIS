@@ -168,7 +168,9 @@ WAIT_RELEASE:
 	rjmp	WAIT_RELEASE
 
 	ret
-
+  ;-------------------------------------
+  ;--- CHECK IF BLOCKED BY BITS 
+  ;--- USES: Z, r16, r17
 BLOCKED_RIGHT:
 	push	ZH
 	push	ZL
@@ -202,7 +204,10 @@ END_BRCHECK:
 	pop		ZL
 	pop		ZH
 	ret
-
+	
+  ;-------------------------------------
+  ;--- CHECK IF BLOCKED BY BITS 
+  ;--- USES: Z, r16, r17
 BLOCKED_LEFT:
 	push	ZH
 	push	ZL
@@ -315,7 +320,10 @@ END_MUX:
 	pop		ZH
 
 	reti
-
+	
+  ;-------------------------------------
+  ;--- GRAVITY - DROPS THE BLOCKS 
+  ;--- USES: Z, r16, r17, LOOPCOUNTER, r20
 GRAVITY:
 	push	ZH
 	push	ZL
@@ -355,7 +363,11 @@ END_GRAV:
 	pop		ZL
 	pop		ZH
 	reti
-
+	
+  ;-------------------------------------
+  ;--- UPDATE VMEM WITH NEW COORDINATES
+  ;--- (ERASE OLD COORDINATES)
+  ;--- USES: Z, r16, r17, r18
 UPDATE_POS:
 	push	ZH
 	push	ZL
@@ -387,7 +399,11 @@ END_UPDATE:
 	pop		ZL
 	pop		ZH
 	ret
-
+	
+  ;-------------------------------------
+  ;--- CHECK IF COLLISION
+  ;--- IF YES -> BUILD NEW BLOCK
+  ;--- USES: Z, r17, r18, r19
 CHECK_COLLISION:
 	push	ZH
 	push	ZL
@@ -448,7 +464,10 @@ END_LOSS_CHECK:
 	pop		ZL
 	pop		ZH
 	ret
-
+	
+  ;-------------------------------------
+  ;--- BUILD NEW BLOCK
+  ;--- USES: Z, r16, r17, LOOPCOUNTER
 BUILD_BLOCK:
 	push	ZH
 	push	ZL
@@ -475,6 +494,10 @@ BUILD_BLOCK:
 	pop		ZH
 	ret
 
+  ;------------------------------------------
+  ;--- CHECK IF ROW IS FILLED
+  ;--- IF YES -> DELETE ROW, ROWS ABOVE FALL
+  ;--- USES: Z, r16, r17, r18, r20
 CHECK_ROW_FILLED:
 	push	ZH
 	push	ZL
