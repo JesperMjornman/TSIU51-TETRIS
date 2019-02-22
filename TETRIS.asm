@@ -321,8 +321,12 @@ GRAVITY:
 	push	ZL
 	push	r16
 	push	r17
+	push	r20
 
+	clr		r20
 	call	CHECK_COLLISION
+	sbrc	r20, 0			; BOOLEAN 
+	rjmp	END_GRAV
 
 	ldi		ZL, LOW(POSX)
 	ldi		ZH, HIGH(POSX)
@@ -342,10 +346,10 @@ GRAVITY:
 	ld		r17, Z
 	and		r17, r16
 	st		Z, r17
-
+END_GRAV:
 	call	UPDATE_POS
 ;	call	CHECK_COLLISION
-	
+	pop		r20
 	pop		r17
 	pop		r16
 	pop		ZL
@@ -358,13 +362,11 @@ UPDATE_POS:
 	push	r16
 	push	r17
 	push	r18
-	
-	
+		
 	ldi		ZL, LOW(POSX)
 	ldi		ZH, HIGH(POSX)
 	ld		r16, Z	;r17
-	
-	
+		
 	ldi		ZL, LOW(POSY)
 	ldi		ZH, HIGH(POSY)
 	ld		r17, Z
@@ -417,6 +419,7 @@ CHECK_COLLISION:
     breq	END_CHECK
 
 HIT:
+	ldi		r20, $01
 	call	CHECK_ROW_FILLED
 	call	CHECK_IF_LOST
 	call	BUILD_BLOCK
