@@ -69,6 +69,8 @@ MOV_LEFT:
 	push	ZL
 	push	r16
 	push	r17
+	push	r18 
+	clr		r18
 
 	ldi		ZH, HIGH(POSX)
 	ldi		ZL, LOW(POSX)
@@ -76,7 +78,10 @@ MOV_LEFT:
 
 	cpi		r16, $FE		;BORDER CHECK
 	breq	END_MOVL
-
+	call	BLOCKED_LEFT
+	sbrc	r18, 0
+	rjmp	END_MOVL
+		
 	com		r16		
 	lsr		r16
 	com		r16
@@ -98,6 +103,7 @@ MOV_LEFT:
 	st		Z, r17
 END_MOVL:
 	call	WAIT_RELEASE	
+	pop		r18
 	pop		r17
 	pop		r16
 	pop		ZL
@@ -112,6 +118,8 @@ MOV_RIGHT:
 	push	ZL
 	push	r16
 	push	r17
+	push	r18
+	clr		r18
 
 	ldi		ZH, HIGH(POSX)
 	ldi		ZL, LOW(POSX)
@@ -119,6 +127,9 @@ MOV_RIGHT:
 	
 	cpi		r16, $7F	;BORDER CHECK
 	breq	END_MOVR
+	call	BLOCKED_RIGHT
+	sbrc	r18, 0
+	rjmp	END_MOVR
 
 	com		r16	
 	lsl		r16
@@ -142,6 +153,7 @@ MOV_RIGHT:
 
 END_MOVR:
 	call	WAIT_RELEASE	
+	pop		r18
 	pop		r17
 	pop		r16
 	pop		ZL
@@ -157,7 +169,73 @@ WAIT_RELEASE:
 
 	ret
 
+BLOCKED_RIGHT:
+	push	ZH
+	push	ZL
+	push	r16
+	push	r17
 
+	ldi		ZH, HIGH(POSX)
+	ldi		ZL, LOW(POSX)
+	ld		r16, Z
+
+	ldi		ZH, HIGH(POSY)
+	ldi		ZL, LOW(POSY)
+	ld		r17, Z
+
+	ldi		ZH, HIGH(VMEM)
+	ldi		ZL, LOW(VMEM)
+	add		ZL, r17
+	ld		r17, Z
+
+	com		r16
+	lsl		r16
+
+	and		r17, r16
+	cpi		r17, 0
+	brne	END_BRCHECK
+	ldi		r18, 1
+
+END_BRCHECK:
+	pop		r17
+	pop		r16
+	pop		ZL
+	pop		ZH
+	ret
+
+BLOCKED_LEFT:
+	push	ZH
+	push	ZL
+	push	r16
+	push	r17
+
+	ldi		ZH, HIGH(POSX)
+	ldi		ZL, LOW(POSX)
+	ld		r16, Z
+
+	ldi		ZH, HIGH(POSY)
+	ldi		ZL, LOW(POSY)
+	ld		r17, Z
+
+	ldi		ZH, HIGH(VMEM)
+	ldi		ZL, LOW(VMEM)
+	add		ZL, r17
+	ld		r17, Z
+
+	com		r16
+	lsr		r16
+
+	and		r17, r16
+	cpi		r17, 0
+	brne	END_BRCHECK
+	ldi		r18, 1
+
+END_BLCHECK:
+	pop		r17
+	pop		r16
+	pop		ZL
+	pop		ZH
+	ret
   ;-------------------------------------
   ;--- MUX
   ;--- USES: Z, r16, r17, MUXCOUNTER (r19)
