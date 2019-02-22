@@ -322,6 +322,8 @@ GRAVITY:
 	push	r16
 	push	r17
 
+	call	CHECK_COLLISION
+
 	ldi		ZL, LOW(POSX)
 	ldi		ZH, HIGH(POSX)
 	ld		r16, Z
@@ -342,7 +344,7 @@ GRAVITY:
 	st		Z, r17
 
 	call	UPDATE_POS
-	call	CHECK_COLLISION
+;	call	CHECK_COLLISION
 	
 	pop		r17
 	pop		r16
@@ -413,16 +415,6 @@ CHECK_COLLISION:
 	or		r19, r18
     cp		r17, r19
     breq	END_CHECK
-  
-/*HIT_DETECTED:
-	com		r18
-	ldi		ZH, HIGH(VMEM)
-	ldi		ZL, LOW(VMEM)
-	dec		r17
-	add		ZL, r17
-	ld		r17, Z
-	and		r17, r18
-	st		Z, r17*/
 
 HIT:
 	call	CHECK_ROW_FILLED
