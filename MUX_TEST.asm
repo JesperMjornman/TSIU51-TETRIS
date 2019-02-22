@@ -204,17 +204,45 @@ CHECK_COLLISION:
 	push	ZL
 	push	r17
 	push	r18
+	push	r19
+
+	ldi		ZH, HIGH(POSX)
+	ldi		ZL, LOW(POSX)
+    ld		r18, Z
 
 	ldi		ZL, LOW(POSY)
 	ldi		ZH, HIGH(POSY)
 	ld		r17, Z
-
+  
 	cpi		r17, $0F
-	brne	END_CHECK
+	breq	HIT
+	
+    ldi		ZH, HIGH(VMEM)
+    ldi		ZL, LOW(VMEM)
+	inc		r17
+    add		ZL, r17
+    ld		r17, Z
+	
+	mov		r19, r17
+    com		r18         ; $EF -> $10 etc
+	or		r19, r18
+    cp		r17, r19
+    breq	END_CHECK
+  
+/*HIT_DETECTED:
+	com		r18
+	ldi		ZH, HIGH(VMEM)
+	ldi		ZL, LOW(VMEM)
 	dec		r17
-	call	BUILD_BLOCK
+	add		ZL, r17
+	ld		r17, Z
+	and		r17, r18
+	st		Z, r17*/
 
+HIT:
+	call	BUILD_BLOCK
 END_CHECK:
+	pop		r19
 	pop		r18
 	pop		r17
 	pop		ZL
@@ -232,7 +260,7 @@ BUILD_BLOCK:
 	ldi		ZL, LOW(POSX)
 	st		Z, r16
 
-	clr	r17
+	clr		r17
 	ldi		ZH, HIGH(POSY)
 	ldi		ZL, LOW(POSY)
 	st		Z, r17
@@ -275,5 +303,4 @@ HW_INIT:
 
 	ret
 
-LINECONVERTER:
-	.db $01, $02, $04, $08, $10, $20, $40, $80, $01, $02, $04, $08, $10, $20, $40, $80
+
