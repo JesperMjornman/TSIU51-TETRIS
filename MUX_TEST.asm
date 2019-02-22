@@ -32,8 +32,11 @@ COLD:
 
 WARM:
 	call	BUILD_BLOCK
+
 START:
+	call	GET_KEY
 	rjmp	START
+
   ;-----------------------------
   ;--- VMEM initieras med värden
 VMEM_INIT:
@@ -43,14 +46,121 @@ VMEM_INIT:
 	ldi		r18, $FF
 	ldi		r17, $10
 VMEM_SET:
-	st		Z+,	r17
+	st		Z+,	r18
 	inc		r16
 	sbrs	r16, 4
 	rjmp	VMEM_SET
 	ret
-  ;----------------------------
-  ;--MUX
-  ;--USES: Z, r16, r17, MUXCOUNTER (r19)
+
+GET_KEY:
+	sbic	PINC, 0
+	call	MOV_LEFT
+
+	sbic	PINC, 1
+	call	MOV_RIGHT
+
+	ret
+
+  ;-----------------------------
+  ;--- MOVEMENT - LEFT
+  ;--- USES: Z, r16, r17
+MOV_LEFT:
+	push	ZH
+	push	ZL
+	push	r16
+	push	r17
+
+	ldi		ZH, HIGH(POSX)
+	ldi		ZL, LOW(POSX)
+	ld		r16, Z
+
+	cpi		r16, $FE		;BORDER CHECK
+	breq	END_MOVL
+
+	com		r16		
+	lsr		r16
+	com		r16
+	st		Z, r16
+
+	ldi		ZH, HIGH(POSY)
+	ldi		ZL, LOW(POSY)
+	ld		r17, Z
+
+	ldi		ZH, HIGH(VMEM)
+	ldi		ZL, LOW(VMEM)
+	add		ZL, r17
+	ld		r17, Z
+	and		r17, r16
+
+	com		r16		;Fyll hålet
+	lsl		r16
+	or		r17, r16
+	st		Z, r17
+END_MOVL:
+	call	WAIT_RELEASE	
+	pop		r17
+	pop		r16
+	pop		ZL
+	pop		ZH
+	ret
+
+  ;-----------------------------
+  ;--- MOVEMENT - RIGHT
+  ;--- USES: Z, r16, r17
+MOV_RIGHT:
+	push	ZH
+	push	ZL
+	push	r16
+	push	r17
+
+	ldi		ZH, HIGH(POSX)
+	ldi		ZL, LOW(POSX)
+	ld		r16, Z
+	
+	cpi		r16, $7F	;BORDER CHECK
+	breq	END_MOVR
+
+	com		r16	
+	lsl		r16
+	com		r16
+	st		Z, r16
+
+	ldi		ZH, HIGH(POSY)
+	ldi		ZL, LOW(POSY)
+	ld		r17, Z
+
+	ldi		ZH, HIGH(VMEM)
+	ldi		ZL, LOW(VMEM)
+	add		ZL, r17
+	ld		r17, Z
+	and		r17, r16
+
+	com		r16		;Fyll hålet
+	lsr		r16
+	or		r17, r16
+	st		Z, r17
+
+END_MOVR:
+	call	WAIT_RELEASE	
+	pop		r17
+	pop		r16
+	pop		ZL
+	pop		ZH
+	ret
+	
+
+WAIT_RELEASE:
+	sbic	PINC, 0
+	rjmp	WAIT_RELEASE
+	sbic	PINC, 1
+	rjmp	WAIT_RELEASE
+
+	ret
+
+
+  ;-------------------------------------
+  ;--- MUX
+  ;--- USES: Z, r16, r17, MUXCOUNTER (r19)
 MUX:
 	push	ZH
 	push	ZL
@@ -169,11 +279,11 @@ UPDATE_POS:
 	push	r17
 	push	r18
 	
-	;ldi		r16, $FF
+	
 	ldi		ZL, LOW(POSX)
 	ldi		ZH, HIGH(POSX)
 	ld		r16, Z	;r17
-	;sub		r16, r17
+	
 	
 	ldi		ZL, LOW(POSY)
 	ldi		ZH, HIGH(POSY)
@@ -184,8 +294,9 @@ UPDATE_POS:
 	ldi		ZH, HIGH(VMEM)
 	add		ZL, r17
 	ld		r17, Z
-	ori		r17, $10
-	;or		r17, r16
+
+	com		r16
+	or		r17, r16
 	st		Z, r17
 END_UPDATE:
 	pop		r18
