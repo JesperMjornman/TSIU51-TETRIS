@@ -348,11 +348,30 @@ CHECK_COLLISION:
 
 HIT:
 	call	CHECK_ROW_FILLED
+	call	CHECK_IF_LOST
 	call	BUILD_BLOCK
 END_CHECK:
 	pop		r19
 	pop		r18
 	pop		r17
+	pop		ZL
+	pop		ZH
+	ret
+
+CHECK_IF_LOST:
+	push	ZH
+	push	ZL
+	push	r16
+
+	ldi		ZH, HIGH(POSY)
+	ldi		ZL, LOW(POSY)
+	ld		r16, Z
+	cpi		r16, $01
+	brne	END_LOSS_CHECK
+LOST:
+	call	VMEM_INIT
+END_LOSS_CHECK:
+	pop		r16
 	pop		ZL
 	pop		ZH
 	ret
