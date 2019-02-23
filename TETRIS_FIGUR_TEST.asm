@@ -7,17 +7,24 @@
 	.org	OVF0addr
 	rjmp	MUX
 
+ ; --------------------------  
+; |---  VARIABLE LAYOUT  ---|
+; ---------------------------	
 .def	MUXCOUNTER = r19
 .def	LOOPCOUNTER = r21
 .equ	BLOCK_SIZE  = 3
-  ;----------------------|
-  ;---	MEMORY LAYOUT ---|
-  ;----------------------|	
+; -------------------------  
+; |---  MEMORY LAYOUT  ---|
+; -------------------------	
 .dseg
 VMEM:	.byte 16
 LINE:	.byte 1
 POSX:	.byte BLOCK_SIZE
 POSY:   .byte BLOCK_SIZE
+
+; ------------------------  
+; |---  CODE SEGMENT  ---|
+; ------------------------	
 .cseg
 
 COLD:				
