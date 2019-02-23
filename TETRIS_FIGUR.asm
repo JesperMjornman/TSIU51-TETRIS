@@ -188,9 +188,6 @@ MOVING_R:
 	lsr		r16
 	or		r17, r16
 	st		Z, r17
-
-	;clr		r18
-
 END_MOVR:
 	cpi		LOOPCOUNTER, 0
 	brne	MOVING_R
@@ -243,7 +240,6 @@ BLOCKED_RIGHT:
 	cpi		r17, 0
 	brne	END_BRCHECK
 	ldi		BOOLEAN, 1
-
 END_BRCHECK:
 	pop		r17
 	pop		r16
@@ -282,7 +278,6 @@ BLOCKED_LEFT:
 	cpi		r17, 0
 	brne	END_BRCHECK
 	ldi		BOOLEAN, 1
-
 END_BLCHECK:
 	pop		r17
 	pop		r16
@@ -309,7 +304,6 @@ MUX:
 	ldi		ZH, HIGH(LINE)
 	ldi		ZL, LOW(LINE)
 	ld		r17, Z
-
 SPI_LCD:
 	//BLUE
 	out		SPDR, r17
@@ -453,7 +447,6 @@ UPDATING_POS:
 	com		r16
 	or		r17, r16
 	st		Z, r17
-
 END_UPDATE:
 	pop		r18
 	pop		r17
@@ -497,7 +490,6 @@ CHECKING_COLL:
 	or		r19, r18
     cp		r17, r19
     breq	END_CHECK
-
 HIT:
 	ldi		r20, $01
 	call	CHECK_ROW_FILLED
@@ -562,7 +554,6 @@ BUILDING:
 	inc		r17
 	cpi		LOOPCOUNTER, BLOCK_SIZE
 	brne	BUILDING
-
 FINISHED_BUILD:
 	pop		LOOPCOUNTER
 	pop		r17
@@ -644,7 +635,6 @@ BUILDING_2:
 	sub		r16, r18
 	st		Z, r16
 
-	
 	ldi		ZH, HIGH(POSY)
 	ldi		ZL, LOW(POSY)
 	add		ZL, LOOPCOUNTER
