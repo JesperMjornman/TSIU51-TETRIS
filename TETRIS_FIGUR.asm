@@ -45,7 +45,7 @@ COLD:
 
 WARM:
 	call	BUILD_BLOCK
-	;call	BUILD_BLOCK_2 ;
+	;call	BUILD_BLOCK_2 
 
 START:
 	call	GET_KEY
@@ -164,7 +164,7 @@ MOVING_R:
 	sbrs	r17, 7			; - Bättre eftersom generell lösning
 	ldi		BOOLEAN, 1	
 
-	call	BLOCKED_RIGHT	; Kolla istället alla bitar innan vi tillåter någon flytt -> undviker buggar  
+	call	BLOCKED_RIGHT	; Kolla istället alla bitar innan vi tillåter någon flytt -> undviker buggar  */
 	sbrc	BOOLEAN, 0
 	rjmp	END_MOVR
 
@@ -201,14 +201,13 @@ END_MOVR:
 	pop		ZH
 	ret
 	
-
 WAIT_RELEASE:
 	sbic	PINC, 0
 	rjmp	WAIT_RELEASE
 	sbic	PINC, 1
 	rjmp	WAIT_RELEASE
-
 	ret
+
   ;-------------------------------------
   ;--- CHECK IF BLOCKED BY BITS 
   ;--- USES: Z, r16, r17
@@ -627,7 +626,7 @@ BUILD_BLOCK_2:
 	clr		r17
 	clr		r18
 BUILDING_2:
-	ldi		r16, $EF
+	ldi		r16, $E7
 
 	ldi		ZH, HIGH(POSX)
 	ldi		ZL, LOW(POSX)
@@ -645,9 +644,10 @@ BUILDING_2:
 	add		ZL, LOOPCOUNTER
 	st		Z, r16
 
-	ldi		r18, $08
+	ldi		r18, $04
 	inc		LOOPCOUNTER
 	inc		r17
+	lsl		r18
 	cpi		LOOPCOUNTER, BLOCK_SIZE
 	brne	BUILDING_2
 
