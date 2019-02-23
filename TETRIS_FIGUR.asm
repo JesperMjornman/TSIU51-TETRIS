@@ -19,7 +19,7 @@
 ; -------------------------	
 .dseg
 VMEM:	.byte 16
-LINE:	.byte 1
+LINE:	.byte 1				; Sparar vilken rad vi är på för att MUX:a rätt
 POSX:	.byte BLOCK_SIZE
 POSY:   .byte BLOCK_SIZE
 
