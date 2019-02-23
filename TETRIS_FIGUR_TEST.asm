@@ -10,8 +10,9 @@
  ; --------------------------  
 ; |---  VARIABLE LAYOUT  ---|
 ; ---------------------------	
-.def	MUXCOUNTER = r19
+.def	MUXCOUNTER  = r19
 .def	LOOPCOUNTER = r21
+.def	BOOLEAN		= r18
 .equ	BLOCK_SIZE  = 3
 ; -------------------------  
 ; |---  MEMORY LAYOUT  ---|
@@ -50,22 +51,7 @@ START:
 	call	GET_KEY
 	rjmp	START
 
-  ;-----------------------------
-  ;--- VMEM initieras med värden
-VMEM_INIT:
-	ldi		ZH, HIGH(VMEM)
-	ldi		ZL, LOW(VMEM)
-	clr		r16
-	ldi		r18, $FF
-	ldi		r17, $10
-VMEM_SET:
-	st		Z+,	r18
-	inc		r16
-	sbrs	r16, 4
-	rjmp	VMEM_SET
-	ret
-
-GET_KEY:
+ GET_KEY:
 	sbic	PINC, 0
 	call	MOV_LEFT
 
@@ -75,16 +61,33 @@ GET_KEY:
 	ret
 
   ;-----------------------------
+  ;--- VMEM initieras med värden
+  ;--- "Nollställer spelplanen"
+VMEM_INIT:
+	ldi		ZH, HIGH(VMEM)
+	ldi		ZL, LOW(VMEM)
+	clr		r16
+	ldi		r17, $FF
+VMEM_SET:
+	st		Z+,	r17
+	inc		r16
+	sbrs	r16, 4
+	rjmp	VMEM_SET
+	ret
+
+
+
+  ;-----------------------------
   ;--- MOVEMENT - LEFT
-  ;--- USES: Z, r16, r17
+  ;--- USES: Z, r16, r17, 
 MOV_LEFT:
 	push	ZH
 	push	ZL
 	push	r16
 	push	r17
-	push	r18 
+	push	BOOLEAN 
 	push	LOOPCOUNTER
-	clr		r18
+	clr		BOOLEAN
 	ldi		LOOPCOUNTER, BLOCK_SIZE
 MOVING_L:
 	dec		LOOPCOUNTER
@@ -97,10 +100,10 @@ MOVING_L:
 	mov		r17, r16	; Border check
 	andi	r17, $01	; Kolla alla block innan vi fortsätter?
 	sbrs	r17, 0
-	ldi		r18, 1
+	ldi		BOOLEAN, 1
 
 	call	BLOCKED_LEFT
-	sbrc	r18, 0
+	sbrc	BOOLEAN, 0
 	rjmp	END_MOVL
 		
 	com		r16		
@@ -129,7 +132,7 @@ END_MOVL:
 
 	call	WAIT_RELEASE	
 	pop		LOOPCOUNTER
-	pop		r18
+	pop		BOOLEAN
 	pop		r17
 	pop		r16
 	pop		ZL
@@ -144,9 +147,9 @@ MOV_RIGHT:
 	push	ZL
 	push	r16
 	push	r17
-	push	r18
+	push	BOOLEAN
 	push	LOOPCOUNTER
-	clr		r18
+	clr		BOOLEAN
 	ldi		LOOPCOUNTER, BLOCK_SIZE
 MOVING_R:
 	dec		LOOPCOUNTER
@@ -157,12 +160,12 @@ MOVING_R:
 	ld		r16, Z
 
 	mov		r17, r16
-	andi	r17, $80	; Border check
-	sbrs	r17, 7		; - Bättre eftersom generell lösning
-	ldi		r18, 1	
+	andi	r17, $80		; Border check
+	sbrs	r17, 7			; - Bättre eftersom generell lösning
+	ldi		BOOLEAN, 1	
 
-	call	BLOCKED_RIGHT
-	sbrc	r18, 0
+	call	BLOCKED_RIGHT	; Kolla istället alla bitar innan vi tillåter någon flytt -> undviker buggar  
+	sbrc	BOOLEAN, 0
 	rjmp	END_MOVR
 
 	com		r16	
@@ -194,7 +197,7 @@ END_MOVR:
 
 	call	WAIT_RELEASE	
 	pop		LOOPCOUNTER
-	pop		r18
+	pop		BOOLEAN
 	pop		r17
 	pop		r16
 	pop		ZL
@@ -239,7 +242,7 @@ BLOCKED_RIGHT:
 	and		r17, r16
 	cpi		r17, 0
 	brne	END_BRCHECK
-	ldi		r18, 1
+	ldi		BOOLEAN, 1
 
 END_BRCHECK:
 	pop		r17
@@ -278,7 +281,7 @@ BLOCKED_LEFT:
 	and		r17, r16
 	cpi		r17, 0
 	brne	END_BRCHECK
-	ldi		r18, 1
+	ldi		BOOLEAN, 1
 
 END_BLCHECK:
 	pop		r17
