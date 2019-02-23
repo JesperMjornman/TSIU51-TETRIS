@@ -9,14 +9,15 @@
 
 .def	MUXCOUNTER = r19
 .def	LOOPCOUNTER = r21
-.dseg
+.equ	BLOCK_SIZE  = 3
   ;----------------------|
   ;---	MEMORY LAYOUT ---|
   ;----------------------|	
+.dseg
 VMEM:	.byte 16
 LINE:	.byte 1
-POSX:	.byte 4
-POSY:   .byte 4
+POSX:	.byte BLOCK_SIZE
+POSY:   .byte BLOCK_SIZE
 .cseg
 
 COLD:				
@@ -36,6 +37,7 @@ COLD:
 
 WARM:
 	call	BUILD_BLOCK
+	;call	BUILD_BLOCK_2 ;
 
 START:
 	call	GET_KEY
@@ -74,14 +76,22 @@ MOV_LEFT:
 	push	r16
 	push	r17
 	push	r18 
+	push	LOOPCOUNTER
 	clr		r18
+	ldi		LOOPCOUNTER, BLOCK_SIZE
+MOVING_L:
+	dec		LOOPCOUNTER
 
 	ldi		ZH, HIGH(POSX)
 	ldi		ZL, LOW(POSX)
+	add		ZL, LOOPCOUNTER
 	ld		r16, Z
 
-	cpi		r16, $FE		;BORDER CHECK
-	breq	END_MOVL
+	mov		r17, r16	; Border check
+	andi	r17, $01	; Kolla alla block innan vi fortsätter?
+	sbrs	r17, 0
+	ldi		r18, 1
+
 	call	BLOCKED_LEFT
 	sbrc	r18, 0
 	rjmp	END_MOVL
@@ -93,6 +103,7 @@ MOV_LEFT:
 
 	ldi		ZH, HIGH(POSY)
 	ldi		ZL, LOW(POSY)
+	add		ZL, LOOPCOUNTER
 	ld		r17, Z
 
 	ldi		ZH, HIGH(VMEM)
@@ -106,7 +117,11 @@ MOV_LEFT:
 	or		r17, r16
 	st		Z, r17
 END_MOVL:
+	cpi		LOOPCOUNTER, 0
+	brne	MOVING_L
+
 	call	WAIT_RELEASE	
+	pop		LOOPCOUNTER
 	pop		r18
 	pop		r17
 	pop		r16
@@ -123,14 +138,22 @@ MOV_RIGHT:
 	push	r16
 	push	r17
 	push	r18
+	push	LOOPCOUNTER
 	clr		r18
+	ldi		LOOPCOUNTER, BLOCK_SIZE
+MOVING_R:
+	dec		LOOPCOUNTER
 
 	ldi		ZH, HIGH(POSX)
 	ldi		ZL, LOW(POSX)
+	add		ZL, LOOPCOUNTER
 	ld		r16, Z
-	
-	cpi		r16, $7F	;BORDER CHECK
-	breq	END_MOVR
+
+	mov		r17, r16
+	andi	r17, $80	; Border check
+	sbrs	r17, 7		; - Bättre eftersom generell lösning
+	ldi		r18, 1	
+
 	call	BLOCKED_RIGHT
 	sbrc	r18, 0
 	rjmp	END_MOVR
@@ -142,6 +165,7 @@ MOV_RIGHT:
 
 	ldi		ZH, HIGH(POSY)
 	ldi		ZL, LOW(POSY)
+	add		ZL, LOOPCOUNTER
 	ld		r17, Z
 
 	ldi		ZH, HIGH(VMEM)
@@ -155,8 +179,14 @@ MOV_RIGHT:
 	or		r17, r16
 	st		Z, r17
 
+	;clr		r18
+
 END_MOVR:
+	cpi		LOOPCOUNTER, 0
+	brne	MOVING_R
+
 	call	WAIT_RELEASE	
+	pop		LOOPCOUNTER
 	pop		r18
 	pop		r17
 	pop		r16
@@ -170,8 +200,8 @@ WAIT_RELEASE:
 	rjmp	WAIT_RELEASE
 	sbic	PINC, 1
 	rjmp	WAIT_RELEASE
-	ret
 
+	ret
   ;-------------------------------------
   ;--- CHECK IF BLOCKED BY BITS 
   ;--- USES: Z, r16, r17
@@ -183,10 +213,12 @@ BLOCKED_RIGHT:
 
 	ldi		ZH, HIGH(POSX)
 	ldi		ZL, LOW(POSX)
+	add		ZL, LOOPCOUNTER
 	ld		r16, Z
 
 	ldi		ZH, HIGH(POSY)
 	ldi		ZL, LOW(POSY)
+	add		ZL, LOOPCOUNTER
 	ld		r17, Z
 
 	ldi		ZH, HIGH(VMEM)
@@ -208,7 +240,7 @@ END_BRCHECK:
 	pop		ZL
 	pop		ZH
 	ret
-
+	
   ;-------------------------------------
   ;--- CHECK IF BLOCKED BY BITS 
   ;--- USES: Z, r16, r17
@@ -220,10 +252,12 @@ BLOCKED_LEFT:
 
 	ldi		ZH, HIGH(POSX)
 	ldi		ZL, LOW(POSX)
+	add		ZL, LOOPCOUNTER
 	ld		r16, Z
 
 	ldi		ZH, HIGH(POSY)
 	ldi		ZL, LOW(POSY)
+	add		ZL, LOOPCOUNTER
 	ld		r17, Z
 
 	ldi		ZH, HIGH(VMEM)
@@ -324,7 +358,7 @@ END_MUX:
 	pop		ZH
 
 	reti
-
+	
   ;-------------------------------------
   ;--- GRAVITY - DROPS THE BLOCKS 
   ;--- USES: Z, r16, r17, LOOPCOUNTER, r20
@@ -333,14 +367,16 @@ GRAVITY:
 	push	ZL
 	push	r16
 	push	r17
-	push	LOOPCOUNTER
 	push	r20
+	push	LOOPCOUNTER
+	ldi		LOOPCOUNTER, BLOCK_SIZE
 
- GRAV_BIT:
 	clr		r20
 	call	CHECK_COLLISION
 	sbrc	r20, 0			; BOOLEAN 
 	rjmp	END_GRAV
+FALLING:
+	dec		LOOPCOUNTER
 
 	ldi		ZL, LOW(POSX)
 	ldi		ZH, HIGH(POSX)
@@ -352,8 +388,8 @@ GRAVITY:
 	add		ZL, LOOPCOUNTER
 	ld		r17, Z
 	inc		r17
-	;sbrc	r17, 5
-	;clr	r17
+		;sbrc	r17, 5
+		;clr	r17
 	st		Z, r17
 
 	ldi		ZL, LOW(VMEM)
@@ -362,21 +398,20 @@ GRAVITY:
 	ld		r17, Z
 	and		r17, r16
 	st		Z, r17
-END_GRAV:
-	call	UPDATE_POS
-	inc		LOOPCOUNTER
-	cpi		LOOPCOUNTER, 5
-	brne	GRAV_BIT
 
-;	call	CHECK_COLLISION
-	pop		r20
+	call	UPDATE_POS
+	cpi		LOOPCOUNTER, 0
+	brne	FALLING
+END_GRAV:
+	;call	UPDATE_POS
 	pop		LOOPCOUNTER
+	pop		r20
 	pop		r17
 	pop		r16
 	pop		ZL
 	pop		ZH
 	reti
- 
+	
   ;-------------------------------------
   ;--- UPDATE VMEM WITH NEW COORDINATES
   ;--- (ERASE OLD COORDINATES)
@@ -387,13 +422,16 @@ UPDATE_POS:
 	push	r16
 	push	r17
 	push	r18
-		
+UPDATING_POS:	
+
 	ldi		ZL, LOW(POSX)
 	ldi		ZH, HIGH(POSX)
-	ld		r16, Z	;r17
+	add		ZL, LOOPCOUNTER
+	ld		r16, Z	
 		
 	ldi		ZL, LOW(POSY)
 	ldi		ZH, HIGH(POSY)
+	add		ZL, LOOPCOUNTER
 	ld		r17, Z
 	dec		r17
 
@@ -405,6 +443,7 @@ UPDATE_POS:
 	com		r16
 	or		r17, r16
 	st		Z, r17
+
 END_UPDATE:
 	pop		r18
 	pop		r17
@@ -412,7 +451,7 @@ END_UPDATE:
 	pop		ZL
 	pop		ZH
 	ret
-
+	
   ;-------------------------------------
   ;--- CHECK IF COLLISION
   ;--- IF YES -> BUILD NEW BLOCK
@@ -423,13 +462,15 @@ CHECK_COLLISION:
 	push	r17
 	push	r18
 	push	r19
-
+CHECKING_COLL:
 	ldi		ZH, HIGH(POSX)
 	ldi		ZL, LOW(POSX)
+	subi	ZL, -(BLOCK_SIZE - 1)
     ld		r18, Z
 
 	ldi		ZL, LOW(POSY)
 	ldi		ZH, HIGH(POSY)
+	subi	ZL, -(BLOCK_SIZE - 1)
 	ld		r17, Z
   
 	cpi		r17, $0F
@@ -452,7 +493,6 @@ HIT:
 	call	CHECK_ROW_FILLED
 	call	CHECK_IF_LOST
 	call	BUILD_BLOCK
-
 END_CHECK:
 	pop		r19
 	pop		r18
@@ -466,11 +506,11 @@ CHECK_IF_LOST:
 	push	ZL
 	push	r16
 
-	ldi		ZH, HIGH(POSY)
-	ldi		ZL, LOW(POSY)
+	ldi		ZH, HIGH(VMEM)
+	ldi		ZL, LOW(VMEM)
 	ld		r16, Z
-	cpi		r16, $01
-	brne	END_LOSS_CHECK
+	cpi		r16, $FF
+	breq	END_LOSS_CHECK
 LOST:
 	call	VMEM_INIT
 END_LOSS_CHECK:
@@ -478,7 +518,7 @@ END_LOSS_CHECK:
 	pop		ZL
 	pop		ZH
 	ret
- 
+	
   ;-------------------------------------
   ;--- BUILD NEW BLOCK
   ;--- USES: Z, r16, r17, LOOPCOUNTER
@@ -489,28 +529,31 @@ BUILD_BLOCK:
 	push	r17
 	push	LOOPCOUNTER
 	clr		LOOPCOUNTER
-BUILD_BLOCKS:
-
+	clr		r17
+BUILDING:
 	ldi		r16, $EF
+
 	ldi		ZH, HIGH(POSX)
 	ldi		ZL, LOW(POSX)
 	add		ZL, LOOPCOUNTER
 	st		Z, r16
 
+	
 	ldi		ZH, HIGH(POSY)
 	ldi		ZL, LOW(POSY)
 	add		ZL, LOOPCOUNTER
-	st		Z, LOOPCOUNTER
+	st		Z, r17
 
 	ldi		ZH, HIGH(VMEM)
 	ldi		ZL, LOW(VMEM)
 	add		ZL, LOOPCOUNTER
 	st		Z, r16
-
 	inc		LOOPCOUNTER
-	cpi		LOOPCOUNTER, $05
-	brne	BUILD_BLOCKS
+	inc		r17
+	cpi		LOOPCOUNTER, BLOCK_SIZE
+	brne	BUILDING
 
+FINISHED_BUILD:
 	pop		LOOPCOUNTER
 	pop		r17
 	pop		r16
@@ -571,11 +614,58 @@ DONE_ROW:
 	pop		ZH
 	ret
 
+
+BUILD_BLOCK_2:
+	push	ZH
+	push	ZL
+	push	r16
+	push	r17
+	push	r18
+	push	LOOPCOUNTER
+	clr		LOOPCOUNTER
+	clr		r17
+	clr		r18
+BUILDING_2:
+	ldi		r16, $EF
+
+	ldi		ZH, HIGH(POSX)
+	ldi		ZL, LOW(POSX)
+	add		ZL, LOOPCOUNTER
+	sub		r16, r18
+	st		Z, r16
+
+	
+	ldi		ZH, HIGH(POSY)
+	ldi		ZL, LOW(POSY)
+	add		ZL, LOOPCOUNTER
+	st		Z, r17
+
+	ldi		ZH, HIGH(VMEM)
+	ldi		ZL, LOW(VMEM)
+	add		ZL, LOOPCOUNTER
+	st		Z, r16
+
+	ldi		r18, $08
+	inc		LOOPCOUNTER
+	inc		r17
+	cpi		LOOPCOUNTER, BLOCK_SIZE
+	brne	BUILDING_2
+
+FINISHED_BUILD_2:
+	pop		LOOPCOUNTER
+	pop		r18
+	pop		r17
+	pop		r16
+	pop		ZL
+	pop		ZH
+	ret
+
+
 HW_INIT:											
-	ldi		r17,(1<<DDB5)|(1<<DDB7)|(1<<DDB4)|(1<<DDB0)				; Set MOSI, SCK, SS, PB0  output, all others input
+	ldi		r17,(1<<DDB5)|(1<<DDB7)|(1<<DDB4)|(1<<DDB0)	; Set MOSI, SCK, SS, PB0  output, all others input
 	out		DDRB,r17
 												
-	ldi		r17,(1<<SPE)|(1<<MSTR)|(0<<SPR0)						; Enable SPI, Master, set clock rate fck/4
+	ldi		r17,(1<<SPE)|(1<<MSTR)|(0<<SPR0)			      ; Enable SPI, Master, set clock rate fck/4
 	out		SPCR,r17
 	cbi		PORTB, 0
 
