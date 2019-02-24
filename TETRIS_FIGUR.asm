@@ -44,8 +44,8 @@ COLD:
 	call	HW_INIT
 
 WARM:
-	call	BUILD_BLOCK
-	;call	BUILD_BLOCK_2 
+	;call	BUILD_BLOCK
+	call	BUILD_BLOCK_2 
 
 START:
 	call	GET_KEY
@@ -89,18 +89,24 @@ MOV_LEFT:
 	push	LOOPCOUNTER
 	clr		BOOLEAN
 	ldi		LOOPCOUNTER, BLOCK_SIZE
+
+	call	BORDER_CHECK		; Check borders before movement
+
 MOVING_L:
 	dec		LOOPCOUNTER
+
+	sbrc	BOOLEAN, 0
+	rjmp	END_MOVL
 
 	ldi		ZH, HIGH(POSX)
 	ldi		ZL, LOW(POSX)
 	add		ZL, LOOPCOUNTER
 	ld		r16, Z
 
-	mov		r17, r16	; Border check
+	/*mov		r17, r16	; Border check
 	andi	r17, $01	; Kolla alla block innan vi fortsätter?
 	sbrs	r17, 0
-	ldi		BOOLEAN, 1
+	ldi		BOOLEAN, 1*/
 
 	call	BLOCKED_LEFT
 	sbrc	BOOLEAN, 0
@@ -151,20 +157,25 @@ MOV_RIGHT:
 	push	LOOPCOUNTER
 	clr		BOOLEAN
 	ldi		LOOPCOUNTER, BLOCK_SIZE
+
+	call	BORDER_CHECK
 MOVING_R:
 	dec		LOOPCOUNTER
+	
+	sbrc	BOOLEAN, 0
+	rjmp	END_MOVR
 
 	ldi		ZH, HIGH(POSX)
 	ldi		ZL, LOW(POSX)
 	add		ZL, LOOPCOUNTER
 	ld		r16, Z
 
-	mov		r17, r16
+	/*mov		r17, r16
 	andi	r17, $80		; Border check
 	sbrs	r17, 7			; - Bättre eftersom generell lösning
-	ldi		BOOLEAN, 1	
+	ldi		BOOLEAN, 1	*/
 
-	call	BLOCKED_RIGHT	; Kolla istället alla bitar innan vi tillåter någon flytt -> undviker buggar  */
+	call	BLOCKED_RIGHT	; Kolla istället alla bitar innan vi tillåter någon flytt -> undviker buggar  
 	sbrc	BOOLEAN, 0
 	rjmp	END_MOVR
 
@@ -208,6 +219,41 @@ WAIT_RELEASE:
 	rjmp	WAIT_RELEASE
 	ret
 
+BORDER_CHECK:
+	push	LOOPCOUNTER
+	push	r16
+	push	r17
+	ldi		LOOPCOUNTER, 0
+ CHECKING_BORDER:
+	ldi		ZH, HIGH(POSX)
+	ldi		ZL, LOW(POSX)
+	add		ZL, LOOPCOUNTER
+	ld		r16, Z
+
+	sbis	PINC, 1
+	rjmp	CHECKING_L
+ CHECKING_R:
+
+	mov		r17, r16
+	andi	r17, $80		; Border check
+	sbrs	r17, 7			; - Bättre eftersom generell lösning
+	ldi		BOOLEAN, 1	
+	rjmp	END_BORDER
+
+ CHECKING_L:
+	andi	r16, $01
+	sbrs	r16, 0
+	ldi		BOOLEAN, 1	
+
+END_BORDER:
+	inc		LOOPCOUNTER
+	cpi		LOOPCOUNTER, BLOCK_SIZE
+	brne	CHECKING_BORDER
+
+	pop		r17
+	pop		r16
+	pop		LOOPCOUNTER
+	ret
   ;-------------------------------------
   ;--- CHECK IF BLOCKED BY BITS 
   ;--- USES: Z, r16, r17
@@ -464,6 +510,7 @@ CHECK_COLLISION:
 	push	r17
 	push	r18
 	push	r19
+
 CHECKING_COLL:
 	ldi		ZH, HIGH(POSX)
 	ldi		ZL, LOW(POSX)
@@ -494,6 +541,7 @@ HIT:
 	call	CHECK_ROW_FILLED
 	call	CHECK_IF_LOST
 	call	BUILD_BLOCK
+	;call	BUILD_BLOCK_2
 END_CHECK:
 	pop		r19
 	pop		r18
