@@ -45,8 +45,8 @@ COLD:
 	call	HW_INIT
 
 WARM:
-	;call	BUILD_BLOCK
-	call	BUILD_BLOCK_L1 
+	call	BUILD_BLOCK
+	;call	BUILD_BLOCK_L1 
 	;call	BUILD_BLOCK_L2
 
 START:
