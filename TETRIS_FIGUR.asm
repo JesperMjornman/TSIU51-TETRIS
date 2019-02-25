@@ -91,7 +91,7 @@ MOV_LEFT:
 	ldi		LOOPCOUNTER, BLOCK_SIZE
 
 	call	BORDER_CHECK		; Check borders before movement
-
+	call	BLOCKED_LEFT
 MOVING_L:
 	dec		LOOPCOUNTER
 
@@ -108,9 +108,9 @@ MOVING_L:
 	sbrs	r17, 0
 	ldi		BOOLEAN, 1*/
 
-	call	BLOCKED_LEFT
-	sbrc	BOOLEAN, 0
-	rjmp	END_MOVL
+	;call	BLOCKED_LEFT
+	;sbrc	BOOLEAN, 0
+	;rjmp	END_MOVL
 		
 	com		r16		
 	lsr		r16
@@ -159,6 +159,8 @@ MOV_RIGHT:
 	ldi		LOOPCOUNTER, BLOCK_SIZE
 
 	call	BORDER_CHECK
+	sbrs	BOOLEAN, 0
+	call	BLOCKED_RIGHT
 MOVING_R:
 	dec		LOOPCOUNTER
 	
@@ -174,10 +176,6 @@ MOVING_R:
 	andi	r17, $80		; Border check
 	sbrs	r17, 7			; - Bättre eftersom generell lösning
 	ldi		BOOLEAN, 1	*/
-
-	call	BLOCKED_RIGHT	; Kolla istället alla bitar innan vi tillåter någon flytt -> undviker buggar  
-	sbrc	BOOLEAN, 0
-	rjmp	END_MOVR
 
 	com		r16	
 	lsl		r16
@@ -262,7 +260,10 @@ BLOCKED_RIGHT:
 	push	ZL
 	push	r16
 	push	r17
-
+	push	r20
+	push	LOOPCOUNTER
+	clr		LOOPCOUNTER
+LOOP_R:
 	ldi		ZH, HIGH(POSX)
 	ldi		ZL, LOW(POSX)
 	add		ZL, LOOPCOUNTER
@@ -279,13 +280,22 @@ BLOCKED_RIGHT:
 	ld		r17, Z
 
 	com		r16
+	mov		r20, r16
+	add		r17, r16
 	lsl		r16
+	lsl		r20
 
-	and		r17, r16
-	cpi		r17, 0
-	brne	END_BRCHECK
+	and		r16, r17
+	cp		r16, r20
+	breq	END_BRCHECK
 	ldi		BOOLEAN, 1
 END_BRCHECK:
+	inc		LOOPCOUNTER
+	cpi		LOOPCOUNTER, BLOCK_SIZE
+	brne	LOOP_R
+
+	pop		LOOPCOUNTER
+	pop		r20
 	pop		r17
 	pop		r16
 	pop		ZL
@@ -300,7 +310,10 @@ BLOCKED_LEFT:
 	push	ZL
 	push	r16
 	push	r17
-
+	push	r20
+	push	LOOPCOUNTER
+	clr		LOOPCOUNTER
+LOOP_L:
 	ldi		ZH, HIGH(POSX)
 	ldi		ZL, LOW(POSX)
 	add		ZL, LOOPCOUNTER
@@ -317,13 +330,22 @@ BLOCKED_LEFT:
 	ld		r17, Z
 
 	com		r16
+	mov		r20, r16
+	add		r17, r16
 	lsr		r16
+	lsr		r20
 
-	and		r17, r16
-	cpi		r17, 0
-	brne	END_BRCHECK
+	and		r16, r17
+	cp		r16, r20
+	breq	END_BLCHECK
 	ldi		BOOLEAN, 1
 END_BLCHECK:
+	inc		LOOPCOUNTER
+	cpi		LOOPCOUNTER, BLOCK_SIZE
+	brne	LOOP_L
+
+	pop		LOOPCOUNTER
+	pop		r20
 	pop		r17
 	pop		r16
 	pop		ZL
