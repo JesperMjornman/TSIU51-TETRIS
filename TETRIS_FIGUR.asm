@@ -102,15 +102,6 @@ MOVING_L:
 	ldi		ZL, LOW(POSX)
 	add		ZL, LOOPCOUNTER
 	ld		r16, Z
-
-	/*mov		r17, r16	; Border check
-	andi	r17, $01	; Kolla alla block innan vi fortsätter?
-	sbrs	r17, 0
-	ldi		BOOLEAN, 1*/
-
-	;call	BLOCKED_LEFT
-	;sbrc	BOOLEAN, 0
-	;rjmp	END_MOVL
 		
 	com		r16		
 	lsr		r16
@@ -126,11 +117,12 @@ MOVING_L:
 	ldi		ZL, LOW(VMEM)
 	add		ZL, r17
 	ld		r17, Z
-	and		r17, r16
-
-	com		r16		;Fyll hålet
+	com		r16
 	lsl		r16
 	or		r17, r16
+	lsr		r16
+	com		r16	
+	and		r17, r16
 	st		Z, r17
 END_MOVL:
 	cpi		LOOPCOUNTER, 0
@@ -172,11 +164,6 @@ MOVING_R:
 	add		ZL, LOOPCOUNTER
 	ld		r16, Z
 
-	/*mov		r17, r16
-	andi	r17, $80		; Border check
-	sbrs	r17, 7			; - Bättre eftersom generell lösning
-	ldi		BOOLEAN, 1	*/
-
 	com		r16	
 	lsl		r16
 	com		r16
@@ -191,12 +178,14 @@ MOVING_R:
 	ldi		ZL, LOW(VMEM)
 	add		ZL, r17
 	ld		r17, Z
-	and		r17, r16
-
-	com		r16		;Fyll hålet
+	com		r16
 	lsr		r16
 	or		r17, r16
+	lsl		r16
+	com		r16	
+	and		r17, r16
 	st		Z, r17
+
 END_MOVR:
 	cpi		LOOPCOUNTER, 0
 	brne	MOVING_R
@@ -459,8 +448,6 @@ FALLING:
 	add		ZL, LOOPCOUNTER
 	ld		r17, Z
 	inc		r17
-		;sbrc	r17, 5
-		;clr	r17
 	st		Z, r17
 
 	ldi		ZL, LOW(VMEM)
@@ -494,7 +481,6 @@ UPDATE_POS:
 	push	r17
 	push	r18
 UPDATING_POS:	
-
 	ldi		ZL, LOW(POSX)
 	ldi		ZH, HIGH(POSX)
 	add		ZL, LOOPCOUNTER
@@ -532,39 +518,58 @@ CHECK_COLLISION:
 	push	r17
 	push	r18
 	push	r19
-
+	push	r16
+	push	LOOPCOUNTER
+	clr		LOOPCOUNTER
 CHECKING_COLL:
 	ldi		ZH, HIGH(POSX)
 	ldi		ZL, LOW(POSX)
-	subi	ZL, -(BLOCK_SIZE - 1)
-    ld		r18, Z
+	add		ZL, LOOPCOUNTER
+    ld		r18, Z+
 
+	ldi		r16, $FF
+	cpi		LOOPCOUNTER, BLOCK_SIZE-1
+	breq	C1
+	ld		r16, Z
+C1:
 	ldi		ZL, LOW(POSY)
 	ldi		ZH, HIGH(POSY)
-	subi	ZL, -(BLOCK_SIZE - 1)
+	add		ZL, LOOPCOUNTER
 	ld		r17, Z
   
-	cpi		r17, $0F
+	cpi		r18, $FF
+	breq	NOT_BOTTOM
+	cpi		r17, $0F	; KNAS
 	breq	HIT
-	
+NOT_BOTTOM:
     ldi		ZH, HIGH(VMEM)
     ldi		ZL, LOW(VMEM)
 	inc		r17
     add		ZL, r17
     ld		r17, Z
 	
+	com		r16
+	add		r17, r16
 	mov		r19, r17
     com		r18         ; $EF -> $10 etc
 	or		r19, r18
     cp		r17, r19
-    breq	END_CHECK
+    brne	HIT
+CHECK_LOOP:
+	inc		LOOPCOUNTER
+	cpi		LOOPCOUNTER, BLOCK_SIZE
+	brne	CHECKING_COLL
+	rjmp	END_CHECK
 HIT:
 	ldi		r20, $01
 	call	CHECK_ROW_FILLED
 	call	CHECK_IF_LOST
-	call	BUILD_BLOCK
+	;call	BUILD_BLOCK
 	;call	BUILD_BLOCK_2
+	call	BUILD_BLOCK_SQUARE
 END_CHECK:
+	pop		LOOPCOUNTER
+	pop		r16
 	pop		r19
 	pop		r18
 	pop		r17
@@ -579,6 +584,7 @@ CHECK_IF_LOST:
 
 	ldi		ZH, HIGH(VMEM)
 	ldi		ZL, LOW(VMEM)
+	inc		ZL
 	ld		r16, Z
 	cpi		r16, $FF
 	breq	END_LOSS_CHECK
@@ -690,46 +696,82 @@ BUILD_BLOCK_2:
 	push	ZL
 	push	r16
 	push	r17
-	push	r18
-	push	LOOPCOUNTER
-	clr		LOOPCOUNTER
+
 	clr		r17
 	clr		r18
 BUILDING_2:
 	ldi		r16, $E7
+	clr		r17
 
 	ldi		ZH, HIGH(POSX)
 	ldi		ZL, LOW(POSX)
-	add		ZL, LOOPCOUNTER
-	sub		r16, r18
-	st		Z, r16
-
-	ldi		ZH, HIGH(POSY)
-	ldi		ZL, LOW(POSY)
-	add		ZL, LOOPCOUNTER
+	st		Z+, r16
+	ldi		r17, $EF
+	st		Z+, r17
 	st		Z, r17
-
+	
 	ldi		ZH, HIGH(VMEM)
 	ldi		ZL, LOW(VMEM)
-	add		ZL, LOOPCOUNTER
+	st		Z+, r16
+	st		Z+, r17
+	st		Z, r17
+	
+	clr		r16
+	ldi		ZH, HIGH(POSY)
+	ldi		ZL, LOW(POSY)
+	st		Z+, r16
+	inc		r16
+	st		Z+, r16
+	inc		r16
 	st		Z, r16
-
-	ldi		r18, $04
-	inc		LOOPCOUNTER
-	inc		r17
-	lsl		r18
-	cpi		LOOPCOUNTER, BLOCK_SIZE
-	brne	BUILDING_2
-
+	
 FINISHED_BUILD_2:
-	pop		LOOPCOUNTER
-	pop		r18
 	pop		r17
 	pop		r16
 	pop		ZL
 	pop		ZH
 	ret
 
+BUILD_BLOCK_SQUARE:
+	push	ZH
+	push	ZL
+	push	r16
+	push	r17
+
+	clr		r17
+	clr		r18
+BUILDING_S:
+	ldi		r16, $E7
+
+	ldi		ZH, HIGH(POSX)
+	ldi		ZL, LOW(POSX)
+	st		Z+, r16
+	st		Z+, r16
+
+	ldi		r17, $FF
+	st		Z, r17
+	
+	ldi		ZH, HIGH(VMEM)
+	ldi		ZL, LOW(VMEM)
+	st		Z+, r16
+	st		Z+, r16
+	st		Z, r17
+	
+	clr		r16
+	ldi		ZH, HIGH(POSY)
+	ldi		ZL, LOW(POSY)
+	st		Z+, r16
+	inc		r16
+	st		Z+, r16
+	inc		r16
+	st		Z, r16
+	
+FINISHED_BUILD_S:
+	pop		r17
+	pop		r16
+	pop		ZL
+	pop		ZH
+	ret
 
 HW_INIT:											
 	ldi		r17,(1<<DDB5)|(1<<DDB7)|(1<<DDB4)|(1<<DDB0)	; Set MOSI, SCK, SS, PB0  output, all others input
