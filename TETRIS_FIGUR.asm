@@ -22,6 +22,7 @@ VMEM:	.byte 16
 LINE:	.byte 1				; Sparar vilken rad vi är på för att MUX:a rätt
 POSX:	.byte BLOCK_SIZE
 POSY:   .byte BLOCK_SIZE
+SEED:	.byte 1
 
 ; ------------------------  
 ; |---  CODE SEGMENT  ---|
@@ -45,7 +46,8 @@ COLD:
 
 WARM:
 	;call	BUILD_BLOCK
-	call	BUILD_BLOCK_2 
+	call	BUILD_BLOCK_L1 
+	;call	BUILD_BLOCK_L2
 
 START:
 	call	GET_KEY
@@ -411,6 +413,12 @@ NOT_0:
 	lsl		r17
 END_MUX:
 	st		Z, r17
+	ldi		ZH, HIGH(SEED)
+	ldi		ZL, LOW(SEED)
+	ld		r17, Z
+	inc		r17
+	st		Z, r17
+
 	pop		r18
 	pop		r17
 	pop		r16
@@ -564,9 +572,9 @@ HIT:
 	ldi		r20, $01
 	call	CHECK_ROW_FILLED
 	call	CHECK_IF_LOST
-	;call	BUILD_BLOCK
+	call	BUILD_BLOCK
 	;call	BUILD_BLOCK_2
-	call	BUILD_BLOCK_SQUARE
+	;call	BUILD_BLOCK_SQUARE
 END_CHECK:
 	pop		LOOPCOUNTER
 	pop		r16
@@ -596,46 +604,6 @@ END_LOSS_CHECK:
 	pop		ZH
 	ret
 	
-  ;-------------------------------------
-  ;--- BUILD NEW BLOCK
-  ;--- USES: Z, r16, r17, LOOPCOUNTER
-BUILD_BLOCK:
-	push	ZH
-	push	ZL
-	push	r16
-	push	r17
-	push	LOOPCOUNTER
-	clr		LOOPCOUNTER
-	clr		r17
-BUILDING:
-	ldi		r16, $EF
-
-	ldi		ZH, HIGH(POSX)
-	ldi		ZL, LOW(POSX)
-	add		ZL, LOOPCOUNTER
-	st		Z, r16
-
-	
-	ldi		ZH, HIGH(POSY)
-	ldi		ZL, LOW(POSY)
-	add		ZL, LOOPCOUNTER
-	st		Z, r17
-
-	ldi		ZH, HIGH(VMEM)
-	ldi		ZL, LOW(VMEM)
-	add		ZL, LOOPCOUNTER
-	st		Z, r16
-	inc		LOOPCOUNTER
-	inc		r17
-	cpi		LOOPCOUNTER, BLOCK_SIZE
-	brne	BUILDING
-FINISHED_BUILD:
-	pop		LOOPCOUNTER
-	pop		r17
-	pop		r16
-	pop		ZL
-	pop		ZH
-	ret
 
   ;------------------------------------------
   ;--- CHECK IF ROW IS FILLED
@@ -690,8 +658,85 @@ DONE_ROW:
 	pop		ZH
 	ret
 
+BUILD_BLOCK:		;FETT RANDOM MANNEN
+	push	ZH
+	push	ZL
+	push	r16
+	push	r17
+	push	LOOPCOUNTER
+	clr		LOOPCOUNTER
 
-BUILD_BLOCK_2:
+	ldi		ZH, HIGH(SEED)
+	ldi		ZL, LOW(SEED)
+	ld		r16, Z
+
+MOD_2:
+	lsr		r16
+	inc		LOOPCOUNTER
+	cpi		LOOPCOUNTER, 5
+	brne	MOD_2
+	
+	sbrs	r16, 3
+	call	BUILD_BLOCK_L1
+
+	sbrs	r16, 2
+	call	BUILD_BLOCK_L2
+
+	sbrs	r16, 1
+	call	BUILD_BLOCK_I
+
+	sbrs	r16, 0
+	call	BUILD_BLOCK_SQUARE
+
+	pop		LOOPCOUNTER
+	pop		r17
+	pop		r16
+	pop		ZL
+	pop		ZH
+	ret
+; ----------------------------------------
+; -- BLOCKMINNE FÖR SKAPANDE AV BLOCKEN -- 
+; --   USES: Z, r16, r17, LOOPCOUNTER   --
+; ----------------------------------------
+BUILD_BLOCK_I:
+	push	ZH
+	push	ZL
+	push	r16
+	push	r17
+	push	LOOPCOUNTER
+	clr		LOOPCOUNTER
+	clr		r17
+BUILDING_I:
+	ldi		r16, $EF
+
+	ldi		ZH, HIGH(POSX)
+	ldi		ZL, LOW(POSX)
+	add		ZL, LOOPCOUNTER
+	st		Z, r16
+
+	
+	ldi		ZH, HIGH(POSY)
+	ldi		ZL, LOW(POSY)
+	add		ZL, LOOPCOUNTER
+	st		Z, r17
+
+	ldi		ZH, HIGH(VMEM)
+	ldi		ZL, LOW(VMEM)
+	add		ZL, LOOPCOUNTER
+	st		Z, r16
+	inc		LOOPCOUNTER
+	inc		r17
+	cpi		LOOPCOUNTER, BLOCK_SIZE
+	brne	BUILDING_I
+FINISHED_BUILD_I:
+	pop		LOOPCOUNTER
+	pop		r17
+	pop		r16
+	pop		ZL
+	pop		ZH
+	ret
+
+BUILD_BLOCK_L1:
 	push	ZH
 	push	ZL
 	push	r16
@@ -699,7 +744,7 @@ BUILD_BLOCK_2:
 
 	clr		r17
 	clr		r18
-BUILDING_2:
+
 	ldi		r16, $E7
 	clr		r17
 
@@ -725,7 +770,46 @@ BUILDING_2:
 	inc		r16
 	st		Z, r16
 	
-FINISHED_BUILD_2:
+	pop		r17
+	pop		r16
+	pop		ZL
+	pop		ZH
+	ret
+
+BUILD_BLOCK_L2:
+	push	ZH
+	push	ZL
+	push	r16
+	push	r17
+
+	clr		r17
+	clr		r18
+
+	ldi		r16, $CF
+	clr		r17
+
+	ldi		ZH, HIGH(POSX)
+	ldi		ZL, LOW(POSX)
+	st		Z+, r16
+	ldi		r17, $EF
+	st		Z+, r17
+	st		Z, r17
+	
+	ldi		ZH, HIGH(VMEM)
+	ldi		ZL, LOW(VMEM)
+	st		Z+, r16
+	st		Z+, r17
+	st		Z, r17
+	
+	clr		r16
+	ldi		ZH, HIGH(POSY)
+	ldi		ZL, LOW(POSY)
+	st		Z+, r16
+	inc		r16
+	st		Z+, r16
+	inc		r16
+	st		Z, r16
+
 	pop		r17
 	pop		r16
 	pop		ZL
@@ -740,7 +824,7 @@ BUILD_BLOCK_SQUARE:
 
 	clr		r17
 	clr		r18
-BUILDING_S:
+
 	ldi		r16, $E7
 
 	ldi		ZH, HIGH(POSX)
@@ -765,8 +849,7 @@ BUILDING_S:
 	st		Z+, r16
 	inc		r16
 	st		Z, r16
-	
-FINISHED_BUILD_S:
+
 	pop		r17
 	pop		r16
 	pop		ZL
