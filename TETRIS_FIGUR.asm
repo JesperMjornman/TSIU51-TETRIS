@@ -7,7 +7,7 @@
 	.org	OVF0addr
 	rjmp	MUX
 
- ; --------------------------  
+; --------------------------  
 ; |---  VARIABLE LAYOUT  ---|
 ; ---------------------------	
 .def	MUXCOUNTER  = r19
@@ -23,6 +23,8 @@ LINE:	.byte 1				; Sparar vilken rad vi är på för att MUX:a rätt
 POSX:	.byte BLOCK_SIZE
 POSY:   .byte BLOCK_SIZE
 SEED:	.byte 1
+FIGURE: .byte 1				; 1 = I | 2 = L1 | 4 = L2 | 8 = SQUARE | 10 = Z1 | 20 = Z2 | 40 = PYRAMID
+ROT:	.byte 1				; 0 = NO rotation, 1 = 1 rotation, 2 = 2 rotations, 3 = 3 rotations, 4 = 4 rotations (Back to 0)
 
 ; ------------------------  
 ; |---  CODE SEGMENT  ---|
@@ -41,12 +43,17 @@ COLD:
 	ldi		r16, $01
 	st		Z, r16
 
+	ldi		ZH, HIGH(ROT)
+	ldi		ZL, LOW(ROT)
+	clr		r16
+	st		Z, r16
+
 	call	VMEM_INIT
 	call	HW_INIT
 
 WARM:
-	call	BUILD_BLOCK
-	;call	BUILD_BLOCK_L1 
+	;call	BUILD_BLOCK
+	call	BUILD_BLOCK_I 
 	;call	BUILD_BLOCK_L2
 
 START:
@@ -54,12 +61,15 @@ START:
 	rjmp	START
 
  GET_KEY:
-	sbic	PINC, 0
+	sbic	PINA, 0
 	call	MOV_LEFT
 
-	sbic	PINC, 1
+	sbic	PINA, 1
 	call	MOV_RIGHT
-
+	;call	ROTATE
+	
+	sbis	PINA, 2
+	call	ROTATE
 	ret
 
   ;-----------------------------
@@ -202,9 +212,11 @@ END_MOVR:
 	ret
 	
 WAIT_RELEASE:
-	sbic	PINC, 0
+	sbic	PINA, 0
 	rjmp	WAIT_RELEASE
-	sbic	PINC, 1
+	sbic	PINA, 1
+	rjmp	WAIT_RELEASE
+	sbis	PINA, 2
 	rjmp	WAIT_RELEASE
 	ret
 
@@ -219,7 +231,7 @@ BORDER_CHECK:
 	add		ZL, LOOPCOUNTER
 	ld		r16, Z
 
-	sbis	PINC, 1
+	sbis	PINA, 1
 	rjmp	CHECKING_L
  CHECKING_R:
 
@@ -572,8 +584,8 @@ HIT:
 	ldi		r20, $01
 	call	CHECK_ROW_FILLED
 	call	CHECK_IF_LOST
-	call	BUILD_BLOCK
-	;call	BUILD_BLOCK_2
+	;call	BUILD_BLOCK
+	call	BUILD_BLOCK_I
 	;call	BUILD_BLOCK_SQUARE
 END_CHECK:
 	pop		LOOPCOUNTER
@@ -666,6 +678,11 @@ BUILD_BLOCK:		;FETT RANDOM MANNEN
 	push	LOOPCOUNTER
 	clr		LOOPCOUNTER
 
+	ldi		ZH, HIGH(ROT)
+	ldi		ZL, LOW(ROT)
+	clr		r16
+	st		Z, r16
+
 	ldi		ZH, HIGH(SEED)
 	ldi		ZL, LOW(SEED)
 	ld		r16, Z
@@ -705,9 +722,13 @@ BUILD_BLOCK_I:
 	push	r17
 	push	LOOPCOUNTER
 	clr		LOOPCOUNTER
+	ldi		r17, 1
+	ldi		ZL, LOW(FIGURE)
+	st		Z, r17
 	clr		r17
 BUILDING_I:
 	ldi		r16, $EF
+
 
 	ldi		ZH, HIGH(POSX)
 	ldi		ZL, LOW(POSX)
@@ -855,6 +876,161 @@ BUILD_BLOCK_SQUARE:
 	pop		ZL
 	pop		ZH
 	ret
+; --------------------------------------------
+; -- ROTATIONSMINNE FÖR SKAPANDE AV BLOCKEN -- 
+; --     USES: Z, r16, r17, LOOPCOUNTER		--
+; -- 1 = I | 2 = L1 | 4 = L2 | 8 = SQUARE | --
+; --   | 10 = Z1 | 20 = Z2 | 40 = PYRAMID   --
+; --------------------------------------------
+
+ROTATE:
+	push	ZH
+	push	ZL
+	push	r16
+	push	r17
+	push	r18
+
+	ldi		ZH, HIGH(FIGURE)
+	ldi		ZL, LOW(FIGURE)
+	ld		r18, Z
+
+	sbrc	r18, 0
+	rcall	ROTATE_I
+
+	/*sbrc	r18, 1
+	rcall	ROTATE_L1
+
+	sbrc	r18, 2
+	rcall	ROTATE_L2
+
+	sbrc	r18, 3 ;SQUARE
+	rcall	END_ROTATE
+
+	sbrc	r18, 4
+	rcall	ROTATE_Z1
+
+	sbrc	r18, 5
+	rcall	ROTATE_Z2
+
+	sbrc	r18, 6
+	rcall	ROTATE_PYRAMID	*/
+
+END_ROTATE:
+	ldi		ZH, HIGH(ROT)
+	ldi		ZL, LOW(ROT)
+	ld		r18, Z
+	inc		r18
+	sbrc	r18, 3
+	clr		r18
+	st		Z, r18
+
+	call	WAIT_RELEASE
+	pop		r18
+	pop		r17
+	pop		r16
+	pop		ZL
+	pop		ZH
+	ret
+
+ROTATE_I:
+	push	ZH
+	push	ZL
+	push	r16
+	push	r17
+	push	r18
+
+	ldi		ZH, HIGH(ROT)
+	ldi		ZL, LOW(ROT)
+	ld		r18, Z
+
+	sbrc	r18, 0
+	rjmp	ROT_I_2
+ROT_I_1:
+	ldi		ZH, HIGH(POSX)
+	ldi		ZL, LOW(POSX)
+	ldi		r18, $FF
+	st		Z+, r18
+	ld		r18, Z
+	mov		r16, r18
+	com		r16
+	lsl		r16
+	com		r16
+	and		r18, r16
+	com		r16
+	lsr		r16
+	lsr		r16
+	com		r16
+	and		r18, r16
+	st		Z+, r18
+	ldi		r16, $FF
+	st		Z, r16
+
+	ldi		ZH, HIGH(POSY)
+	ldi		ZL, LOW(POSY)
+	ld		r17, Z
+
+	ldi		ZH, HIGH(VMEM)
+	ldi		ZL, LOW(VMEM)
+	add		ZL, r17
+	st		Z+, r16
+	st		Z+, r18
+	st		Z, r16
+	rjmp	END_ROTI
+ROT_I_2:
+	ldi		ZH, HIGH(POSX)
+	ldi		ZL, LOW(POSX)
+	ldi		r18, $EF
+	ld		r16, Z
+	and		r16, r18
+	st		Z+, r16
+	st		Z+, r16
+	st		Z, r16
+
+	ldi		ZH, HIGH(POSY)
+	ldi		ZL, LOW(POSY)
+	ld		r17, Z
+
+	ldi		ZH, HIGH(VMEM)
+	ldi		ZL, LOW(VMEM)
+	add		ZL, r17
+	st		Z+, r16
+	st		Z+, r16
+	st		Z, r16
+
+END_ROTI:
+	pop		r18
+	pop		r17
+	pop		r16
+	pop		ZL
+	pop		ZH
+
+	ret
+
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 HW_INIT:											
 	ldi		r17,(1<<DDB5)|(1<<DDB7)|(1<<DDB4)|(1<<DDB0)	; Set MOSI, SCK, SS, PB0  output, all others input
@@ -876,10 +1052,10 @@ HW_INIT:
 	out		OCR1AH, r17		
 	out		OCR1AL, r16
 
-	ldi		r16, $FF
-	out		DDRA, r16								
+	;ldi		r16, $FF
+	;out		DDRA, r16								
 	clr		r16
-	out		DDRC, r16								
+	out		DDRA, r16								
 	sei
 
 	ret
