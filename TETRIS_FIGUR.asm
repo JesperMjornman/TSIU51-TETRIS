@@ -216,8 +216,21 @@ WAIT_RELEASE:
 	rjmp	WAIT_RELEASE
 	sbic	PINA, 1
 	rjmp	WAIT_RELEASE
+	ret
+WAIT_AV:
+	push	r16
+	push	r17
+AV:
 	sbis	PINA, 2
-	rjmp	WAIT_RELEASE
+	rjmp	AV
+	ldi		r16, 225
+    ldi		r17, 229
+AV1:dec		r17
+    brne	AV1
+    dec		r16
+    brne	AV1
+	pop		r17
+	pop		r16
 	ret
 
 BORDER_CHECK:
@@ -924,12 +937,35 @@ END_ROTATE:
 	clr		r18
 	st		Z, r18
 
-	call	WAIT_RELEASE
+	call	WAIT_AV
 	pop		r18
 	pop		r17
 	pop		r16
 	pop		ZL
 	pop		ZH
+	ret
+
+COMPENSATE:
+	com		r18
+	ldi		r19, $10 
+	cp		r17, r19
+	breq	END_COMP
+
+	cp		r17, r19
+	brlo	COMP_R
+COMP_L:
+	lsl		r18
+	lsl		r19
+	cp		r17, r19
+	brne	COMP_L
+	rjmp	END_COMP
+COMP_R:
+	lsr		r18
+	lsr		r19
+	cp		r17, r19
+	brne	COMP_R
+END_COMP:
+	com		r18
 	ret
 
 ROTATE_I:
@@ -938,6 +974,7 @@ ROTATE_I:
 	push	r16
 	push	r17
 	push	r18
+	push	r19
 
 	ldi		ZH, HIGH(ROT)
 	ldi		ZL, LOW(ROT)
@@ -948,43 +985,16 @@ ROTATE_I:
 ROT_I_1:
 	ldi		ZH, HIGH(POSX)
 	ldi		ZL, LOW(POSX)
-	ldi		r18, $FF
-	st		Z+, r18
-	ld		r18, Z
-	mov		r16, r18
-	com		r16
-	lsl		r16
-	com		r16
-	and		r18, r16
-	com		r16
-	lsr		r16
-	lsr		r16
-	com		r16
-	and		r18, r16
-	st		Z+, r18
-	ldi		r16, $FF
-	st		Z, r16
-
-	ldi		ZH, HIGH(POSY)
-	ldi		ZL, LOW(POSY)
-	ld		r17, Z
-
-	ldi		ZH, HIGH(VMEM)
-	ldi		ZL, LOW(VMEM)
-	add		ZL, r17
-	st		Z+, r16
-	st		Z+, r18
-	st		Z, r16
-	rjmp	END_ROTI
-ROT_I_2:
-	ldi		ZH, HIGH(POSX)
-	ldi		ZL, LOW(POSX)
-	ldi		r18, $EF
 	ld		r16, Z
-	and		r16, r18
-	st		Z+, r16
-	st		Z+, r16
-	st		Z, r16
+	com		r16
+	mov		r17, r16
+	ldi		r18, $C7
+	rcall	COMPENSATE
+	ldi		r17, $FF
+
+	st		Z+, r17
+	st		Z+, r18
+	st		Z,  r17
 
 	ldi		ZH, HIGH(POSY)
 	ldi		ZL, LOW(POSY)
@@ -993,11 +1003,21 @@ ROT_I_2:
 	ldi		ZH, HIGH(VMEM)
 	ldi		ZL, LOW(VMEM)
 	add		ZL, r17
-	st		Z+, r16
-	st		Z+, r16
-	st		Z, r16
+	ld		r17, Z
+	or		r17, r16
+	st		Z+, r17
+	ld		r17, Z
+	or		r17, r16
+	st		Z+, r17
+	ld		r17, Z
+	or		r17, r16
+	st		Z, r17
 
+
+ROT_I_2:
+	
 END_ROTI:
+	pop		r19
 	pop		r18
 	pop		r17
 	pop		r16
@@ -1005,6 +1025,7 @@ END_ROTI:
 	pop		ZH
 
 	ret
+
 
 
 	
