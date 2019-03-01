@@ -58,8 +58,8 @@ COLD:
 
 WARM:
 	;call	BUILD_BLOCK
-	;call	BUILD_BLOCK_I 
-	call	BUILD_BLOCK_L1
+	call	BUILD_BLOCK_I 
+	;call	BUILD_BLOCK_L1
 
 START:
 	call	GET_KEY
@@ -243,14 +243,16 @@ WAIT_AV:
 	push	r16
 	push	r17
 AV:
-	sbis	PINA, 2
-	rjmp	AV
 	ldi		r16, 225
     ldi		r17, 229
 AV1:dec		r17
     brne	AV1
     dec		r16
     brne	AV1
+
+	sbis	PINA, 2
+	rjmp	AV
+
 	pop		r17
 	pop		r16
 	ret
@@ -621,7 +623,7 @@ HIT:
 	call	CHECK_ROW_FILLED
 	call	CHECK_IF_LOST
 	;call	BUILD_BLOCK
-	call	BUILD_BLOCK_L1
+	call	BUILD_BLOCK_I
 	;call	BUILD_BLOCK_SQUARE
 END_CHECK:
 	pop		LOOPCOUNTER
@@ -824,15 +826,13 @@ BUILD_BLOCK_L1:
 	ldi		ZH, HIGH(ROTP)
 	ldi		ZL, LOW(ROTP)			; Ta bort efter alla figurer klara
 	ldi		r16, $10
-
-	ldi		r17, $02
-	ldi		ZL, LOW(FIGURE)
-	st		Z, r17
-	clr		r17
-
 	st		Z, r16
-	clr		r17
-	clr		r18
+
+	ldi		r16, 2
+	ldi		ZH, HIGH(FIGURE)
+	ldi		ZL, LOW(FIGURE)
+	st		Z, r16
+	clr		r16
 
 	ldi		r16, $E7
 	clr		r17
@@ -944,6 +944,7 @@ BUILD_BLOCK_SQUARE:
 	pop		ZL
 	pop		ZH
 	ret
+
 ; --------------------------------------------
 ; -- ROTATIONSMINNE FÖR SKAPANDE AV BLOCKEN -- 
 ; --     USES: Z, r16, r17, LOOPCOUNTER		--
@@ -957,7 +958,7 @@ ROTATE:
 	push	r16
 	push	r17
 	push	r18
-	push	BOOLEAN
+	push	BOOLEAN					;Rensa några register som inte används
 	clr		BOOLEAN
 
 	ldi		ZH, HIGH(ROTP)
@@ -975,15 +976,14 @@ ROTATE:
 	sbrc	r17, 7				; |
 	rjmp	END_ROTATE			; |
 
-
 	ldi		ZH, HIGH(FIGURE)
 	ldi		ZL, LOW(FIGURE)
-	ld		r18, Z
+	ld		r17, Z
 	
-	sbrc	r18, 0
+	sbrc	r17, 0
 	rcall	ROTATE_I
 
-	sbrc	r18, 1
+	sbrc	r17, 1
 	rcall	ROTATE_L1
 
 	/*sbrc	r18, 2
