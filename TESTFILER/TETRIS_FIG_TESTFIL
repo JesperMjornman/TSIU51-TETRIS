@@ -1017,7 +1017,40 @@ ROT_I_1: // I -> ---
 	st		Z, r17
 
 ROT_I_2: // --- -> I
-	
+	ldi		r18, $EF
+	ldi		ZH, HIGH(ROTP)
+	ldi		ZL, LOW(ROTP)			
+	ld		r17, Z
+	rcall	COMPENSATE
+
+	ldi		ZH, HIGH(POSX)
+	ldi		ZL, LOW(POSX)
+	subi	ZL, -1			      ; Bara figur på andra raden i minnet
+	ld		r16, Z	
+	clr		ZL		
+	st		Z+, r18
+	st		Z+, r18
+	st		Z,  r18
+
+	ldi		ZH, HIGH(POSY)
+	ldi		ZL, LOW(POSY)
+	ld		r17, Z
+
+	ldi		ZH, HIGH(VMEM)
+	ldi		ZL, LOW(VMEM)
+	add		ZL, r17
+	com		r16
+	ld		r17, Z
+	and		r17, r18
+	st		Z+, r17
+	ld		r17, Z
+	or		r17, r16
+	and		r17, r18
+	st		Z+, r17
+	ld		r17, Z
+	and		r17, r18
+	st		Z, r17
+
 END_ROTI:
 	pop		r19
 	pop		r18
