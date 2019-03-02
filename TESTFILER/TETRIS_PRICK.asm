@@ -59,6 +59,7 @@ COLD:
 	call	HW_INIT
 
 WARM:
+	rcall	GAME_OVER
 	;rcall	BUILD_BLOCK
 	;call	BUILD_BLOCK_I 
 	call	BUILD_BLOCK_L1
