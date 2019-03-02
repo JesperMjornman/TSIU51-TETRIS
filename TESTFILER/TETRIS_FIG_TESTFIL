@@ -1011,17 +1011,17 @@ ROTATE:
 	sbrc	r18, 6
 	rcall	ROTATE_PYRAMID	*/
 
-END_ROTATE:
+
 	ldi		ZH, HIGH(ROT)
 	ldi		ZL, LOW(ROT)
-	ld		r18, Z
-	inc		r18
-	cpi		r18, 4
-	brne	ROT_POP
-	clr		r18
+	ld		r17, Z
+	inc		r17
+	cpi		r17, 4
+	brne	END_ROTATE
+	clr		r17
 
-ROT_POP:
-	st		Z, r18
+END_ROTATE:
+	st		Z, r17				; Kanske fel
 	call	WAIT_AV
 	;call	WAIT_RELEASE
 	pop		BOOLEAN
