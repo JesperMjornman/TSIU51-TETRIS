@@ -1426,9 +1426,9 @@ ROT_L2_1:
 	ldi		r17, $FF
 	ldi		ZH, HIGH(POSX)
 	ldi		ZL, LOW(POSX)
-	st		Z+, r17
+	st		Z+, r23
 	st		Z+, r20
-	st		Z,  r23
+	st		Z,  r17
 
 	rjmp	END_ROTL2
 ROT_L2_2:
@@ -1480,7 +1480,7 @@ ROT_CL2:					; MICKE HJÄLP
 	breq	ROT_L2_4
 ROT_L2_3:
 	ldi		r20, $C7
-	ldi		r23, $DF
+	ldi		r23, $F7
 
 	rcall	COMPENSATE
 
@@ -1503,7 +1503,7 @@ ROT_L2_3:
 
 	ld		r17, Z
 	or		r17, r16
-	and		r17, r23
+	;and		r17, r23
 	st		Z+,  r17
 	ld		r17, Z
 	or		r17, r16
@@ -1511,15 +1511,15 @@ ROT_L2_3:
 	st		Z+,  r17
 	ld		r17, Z
 	or		r17, r19
-	;and		r17, r23
+	and		r17, r23
 	st		Z,   r17
 	
 	ldi		r17, $FF
 	ldi		ZH, HIGH(POSX)
 	ldi		ZL, LOW(POSX)
-	st		Z+, r23
+	st		Z+, r17
 	st		Z+, r20
-	st		Z,  r17
+	st		Z,  r23
 
 	rjmp	END_ROTL2
 ROT_L2_4:
