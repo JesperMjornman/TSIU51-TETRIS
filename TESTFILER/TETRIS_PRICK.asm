@@ -26,7 +26,7 @@ SEED:	.byte 1
 FIGURE: .byte 1				; 1 = I | 2 = L1 | 4 = L2 | 8 = SQUARE | 10 = Z1 | 20 = Z2 | 40 = PYRAMID
 ROT:	.byte 1				; 0 = NO rotation, 1 = 1 rotation, 2 = 2 rotations, 3 = 3 rotations, 4 = 4 rotations (Back to 0)
 ROTP:	.byte 1				; Rotationspunkt -> rotera kring och kompensera i x-led för rotationen
-GG:		.db $C3, $DF, $DF, $DF, $D3, $DB, $DB, $C3
+GG:		.db $C3, $DF, $DF, $DF, $D3, $DB, $DB, $C3, $C3, $DF, $DF, $DF, $D3, $DB, $DB, $C3
 
 ; ------------------------  
 ; |---  CODE SEGMENT  ---|
@@ -100,6 +100,7 @@ GAME_OVER:
 	push	ZL
 	push	r17
 	push	r16
+
 	clr		r16
 GG_SET_DISP:
 	ldi		ZH, HIGH(GG)
