@@ -53,16 +53,16 @@ COLD:
 	ldi		r16, $10
 	st		Z, r16
 
-	call	VMEM_INIT
+	rcall	VMEM_INIT
 	call	HW_INIT
 
 WARM:
-	;call	BUILD_BLOCK
+	;rcall	BUILD_BLOCK
 	;call	BUILD_BLOCK_I 
 	call	BUILD_BLOCK_L1
 
 START:
-	call	GET_KEY
+	rcall	GET_KEY
 	rjmp	START
 
  GET_KEY:
@@ -70,11 +70,11 @@ START:
 	call	MOV_LEFT
 
 	sbic	PINA, 1
-	call	MOV_RIGHT
+	rcall	MOV_RIGHT
 	;call	ROTATE
 	
 	sbis	PINA, 2
-	call	ROTATE
+	rcall	ROTATE
 	ret
 
   ;-----------------------------
@@ -107,8 +107,8 @@ MOV_LEFT:
 	clr		BOOLEAN
 	ldi		LOOPCOUNTER, BLOCK_SIZE
 
-	call	BORDER_CHECK		; Check borders before movement
-	call	BLOCKED_LEFT
+	rcall	BORDER_CHECK		; Check borders before movement
+	rcall	BLOCKED_LEFT
 MOVING_L:
 	dec		LOOPCOUNTER
 
@@ -154,7 +154,7 @@ END_MOVL:
 	lsr		r16
 	st		Z, r16
 
-	call	WAIT_RELEASE	
+	rcall	WAIT_RELEASE	
 	pop		LOOPCOUNTER
 	pop		BOOLEAN
 	pop		r17
@@ -176,9 +176,9 @@ MOV_RIGHT:
 	clr		BOOLEAN
 	ldi		LOOPCOUNTER, BLOCK_SIZE
 
-	call	BORDER_CHECK
+	rcall	BORDER_CHECK
 	sbrs	BOOLEAN, 0
-	call	BLOCKED_RIGHT
+	rcall	BLOCKED_RIGHT
 MOVING_R:
 	dec		LOOPCOUNTER
 	
@@ -224,7 +224,7 @@ END_MOVR:
 	lsl		r16
 	st		Z, r16
 
-	call	WAIT_RELEASE	
+	rcall	WAIT_RELEASE	
 	pop		LOOPCOUNTER
 	pop		BOOLEAN
 	pop		r17
@@ -1574,6 +1574,10 @@ END_ROTL2:
 
 	ret
 
+
+
+
+
 HW_INIT:											
 	ldi		r17,(1<<DDB5)|(1<<DDB7)|(1<<DDB4)|(1<<DDB0)	; Set MOSI, SCK, SS, PB0  output, all others input
 	out		DDRB,r17
@@ -1593,9 +1597,7 @@ HW_INIT:
 	ldi		r16, $09	
 	out		OCR1AH, r17		
 	out		OCR1AL, r16
-
-	;ldi		r16, $FF
-	;out		DDRA, r16								
+						
 	clr		r16
 	out		DDRA, r16								
 	sei
