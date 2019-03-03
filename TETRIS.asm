@@ -769,9 +769,12 @@ BUILD_BLOCK:		;FETT RANDOM MANNEN
 MOD_2:
 	lsr		r16
 	inc		LOOPCOUNTER
-	cpi		LOOPCOUNTER, 5
+	cpi		LOOPCOUNTER, 3
 	brne	MOD_2
 	
+	sbrs	r16, 4
+	call	BUILD_BLOCK_PYRAMID
+
 	sbrs	r16, 3
 	call	BUILD_BLOCK_L1
 
@@ -999,7 +1002,57 @@ BUILD_BLOCK_SQUARE:
 	pop		ZL
 	pop		ZH
 	ret
+BUILD_BLOCK_PYRAMID:
+	push	ZH
+	push	ZL
+	push	r16
+	push	r17
+	
+	/*ldi		ZH, HIGH(ROT)
+	ldi		ZL, LOW(ROT)			; Ta bort efter alla figurer klara
+	ldi		r16, 0
+	st		Z, r16
 
+	ldi		ZH, HIGH(ROTP)
+	ldi		ZL, LOW(ROTP)			; Ta bort efter alla figurer klara
+	ldi		r16, $10
+	st		Z, r16*/
+
+	ldi		r16, $10
+	ldi		ZH, HIGH(FIGURE)
+	ldi		ZL, LOW(FIGURE)
+	st		Z, r16
+	clr		r16
+
+	ldi		r16, $EF
+	ldi		r17, $CF
+
+	ldi		ZH, HIGH(POSX)
+	ldi		ZL, LOW(POSX)
+	st		Z+, r16
+	st		Z+, r17
+	st		Z, r16
+	
+	ldi		ZH, HIGH(VMEM)
+	ldi		ZL, LOW(VMEM)
+	st		Z+, r16
+	st		Z+, r17
+	st		Z, r16
+	
+	clr		r16
+	ldi		ZH, HIGH(POSY)
+	ldi		ZL, LOW(POSY)
+	st		Z+, r16
+	inc		r16
+	st		Z+, r16
+	inc		r16
+	st		Z, r16
+	
+	pop		r17
+	pop		r16
+	pop		ZL
+	pop		ZH
+	ret
 ; --------------------------------------------
 ; -- ROTATIONSMINNE FÖR SKAPANDE AV BLOCKEN -- 
 ; --     USES: Z, r16, r17, LOOPCOUNTER		--
