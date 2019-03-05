@@ -68,8 +68,7 @@ COLD:
 	call	HW_INIT
 
 WARM:
-	;rcall	GAME_OVER
-	;rcall	VMEM_INIT
+	rcall	GAME_OVER
 	rcall	BUILD_BLOCK
 
 START:
@@ -100,7 +99,7 @@ VMEM_SET:
 	rjmp	VMEM_SET
 	ret
 
-/*GAME_OVER:
+GAME_OVER:
 	push	ZH
 	push	ZL
 	push	r17
@@ -134,7 +133,7 @@ GG_DONE:
 	pop		r19
 	pop		ZL
 	pop		ZH
-	ret */
+	ret 
 	
   ;-----------------------------
   ;--- MOVEMENT - LEFT
