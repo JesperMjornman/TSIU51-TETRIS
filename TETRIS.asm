@@ -36,7 +36,6 @@ SEED:	.byte 1
 FIGURE: .byte 1				; 1 = I | 2 = L1 | 4 = L2 | 8 = SQUARE | 10 = Z1 | 20 = Z2 | 40 = PYRAMID
 ROT:	.byte 1				; 0 = NO rotation, 1 = 1 rotation, 2 = 2 rotations, 3 = 3 rotations, 4 = 4 rotations (Back to 0)
 ROTP:	.byte 1				; Rotationspunkt -> rotera kring och kompensera i x-led för rotationen
-GG:		.db $C3, $DF, $DF, $DF, $D3, $DB, $DB, $C3, $C3, $DF, $DF, $DF, $D3, $DB, $DB, $C3
 
 ; ------------------------  
 ; |---  CODE SEGMENT  ---|
@@ -66,14 +65,12 @@ COLD:
 	st		Z, r16
 
 	rcall	VMEM_INIT
-
 	call	HW_INIT
 
 WARM:
 	;rcall	GAME_OVER
-	;rcall	BUILD_BLOCK
-	call	BUILD_BLOCK_Z2
-	;call	BUILD_BLOCK_L1
+	;rcall	VMEM_INIT
+	rcall	BUILD_BLOCK
 
 START:
 	rcall	GET_KEY
@@ -113,7 +110,7 @@ VMEM_SET:
 	out		TCCR1B, r16	
 
 	clr		r16
-GG_SET_DISP:
+GG_SET_DISP:					; FUNGERAR NU
 	ldi		ZH, HIGH(GG*2)
 	ldi		ZL, LOW(GG*2)
 	add		ZL, r16
@@ -137,7 +134,7 @@ GG_DONE:
 	pop		r19
 	pop		ZL
 	pop		ZH
-	ret*/
+	ret */
 	
   ;-----------------------------
   ;--- MOVEMENT - LEFT
@@ -301,7 +298,6 @@ BORDER_CHECK:
 	sbis	PINA, 1
 	rjmp	CHECKING_L
  CHECKING_R:
-
 	mov		r17, r16
 	andi	r17, $80		; Border check
 	sbrs	r17, 7			; - Bättre eftersom generell lösning
@@ -653,7 +649,6 @@ HIT:
 	call	CHECK_ROW_FILLED
 	call	CHECK_IF_LOST
 	call	BUILD_BLOCK
-	;call	BUILD_BLOCK_Z1
 END_CHECK:
 	cbi		PORTD, 0
 	pop		LOOPCOUNTER
@@ -677,9 +672,11 @@ CHECK_IF_LOST:
 	cpi		r16, $FF
 	breq	END_LOSS_CHECK
 LOST:
+	sbi		PORTD, 3
 	;rcall	GAME_OVER	
 	rcall	VMEM_INIT
 END_LOSS_CHECK:
+	cbi		PORTD, 3
 	pop		r16
 	pop		ZL
 	pop		ZH
@@ -725,8 +722,9 @@ FULL_ROW_FOUND:
 	dec		r16
 	cpi		r16, 0
 	brne	FULL_ROW_FOUND
-
-DONE_ROW:
+	sbi		PORTD, 1	; Spela ljud
+DONE_ROW:				; |
+	cbi		PORTD, 1	; |
 	inc		r20
 	cpi		r20, $10
 	brne	UPDATE_LOOP
@@ -739,7 +737,7 @@ DONE_ROW:
 	pop		ZH
 	ret
 
-BUILD_BLOCK:		;FETT RANDOM MANNEN
+BUILD_BLOCK:		
 	push	ZH
 	push	ZL
 	push	r16
@@ -804,16 +802,6 @@ BUILD_BLOCK_I:
 	push	LOOPCOUNTER
 	clr		LOOPCOUNTER
 
-	/*ldi		ZH, HIGH(ROT)
-	ldi		ZL, LOW(ROT)			; Ta bort efter alla figurer klara
-	ldi		r16, 0
-	st		Z, r16
-
-	ldi		ZH, HIGH(ROTP)
-	ldi		ZL, LOW(ROTP)			; Ta bort efter alla figurer klara
-	ldi		r16, $10
-	st		Z, r16*/
-
 	ldi		r17, 1
 	ldi		ZL, LOW(FIGURE)
 	st		Z, r17
@@ -853,16 +841,6 @@ BUILD_BLOCK_L1:
 	push	ZL
 	push	r16
 	push	r17
-	
-	/*ldi		ZH, HIGH(ROT)
-	ldi		ZL, LOW(ROT)			; Ta bort efter alla figurer klara
-	ldi		r16, 0
-	st		Z, r16
-
-	ldi		ZH, HIGH(ROTP)
-	ldi		ZL, LOW(ROTP)			; Ta bort efter alla figurer klara
-	ldi		r16, $10
-	st		Z, r16*/
 
 	ldi		r16, 2
 	ldi		ZH, HIGH(FIGURE)
@@ -906,16 +884,6 @@ BUILD_BLOCK_L2:
 	push	ZL
 	push	r16
 	push	r17
-	
-	/*ldi		ZH, HIGH(ROT)
-	ldi		ZL, LOW(ROT)			; Ta bort efter alla figurer klara
-	ldi		r16, 0
-	st		Z, r16
-
-	ldi		ZH, HIGH(ROTP)
-	ldi		ZL, LOW(ROTP)			; Ta bort efter alla figurer klara
-	ldi		r16, $10
-	st		Z, r16*/
 
 	ldi		r17, $04
 	ldi		ZL, LOW(FIGURE)
@@ -1006,16 +974,6 @@ BUILD_BLOCK_PYRAMID:
 	push	ZL
 	push	r16
 	push	r17
-	
-	/*ldi		ZH, HIGH(ROT)
-	ldi		ZL, LOW(ROT)			; Ta bort efter alla figurer klara
-	ldi		r16, 0
-	st		Z, r16
-
-	ldi		ZH, HIGH(ROTP)
-	ldi		ZL, LOW(ROTP)			; Ta bort efter alla figurer klara
-	ldi		r16, $10
-	st		Z, r16*/
 
 	ldi		r16, $10
 	ldi		ZH, HIGH(FIGURE)
@@ -1197,7 +1155,7 @@ ROTATE:
 	sbrc	r17, 2
 	rcall	ROTATE_L2
 
-	sbrc	r17, 3 ;SQUARE
+	sbrc	r17, 3				;SQUARE
 	rjmp	END_ROTATE
 
 	sbrc	r17, 4
@@ -1447,7 +1405,6 @@ ROT_L1_2:
 	add		ZL, r17
 
 	ld		r17, Z
-	;or		r17, r16
 	and		r17, r20
 	st		Z+,  r17
 	ld		r17, Z
@@ -1467,7 +1424,7 @@ ROT_L1_2:
 	st		Z,  r23
 
 	rjmp	END_ROTL1
-ROT_CL1:					; MICKE HJÄLP 
+ROT_CL1:					
 	cpi		r18, 3
 	breq	ROT_L1_4
 ROT_L1_3:
@@ -1503,7 +1460,6 @@ ROT_L1_3:
 	st		Z+,  r17
 	ld		r17, Z
 	or		r17, r19
-	;and		r17, r23
 	st		Z,   r17
 	
 	ldi		r17, $FF
@@ -1545,7 +1501,6 @@ ROT_L1_4:
 	and		r17, r20
 	st		Z+,  r17
 	ld		r17, Z
-	;or		r17, r19
 	and		r17, r20
 	st		Z,   r17
 
@@ -1638,7 +1593,6 @@ ROT_L2_2:
 	ldi		ZL, LOW(POSX)
 	ld		r16, Z+
 	ld		r19, Z+
-	;ld		r19, Z
 
 	com		r16
 	com		r19
@@ -1660,7 +1614,6 @@ ROT_L2_2:
 	and		r17, r20
 	st		Z+,  r17
 	ld		r17, Z
-	;or		r17, r19
 	and		r17, r23
 	st		Z,   r17
 	
@@ -1672,7 +1625,7 @@ ROT_L2_2:
 	st		Z,  r23
 
 	rjmp	END_ROTL2
-ROT_CL2:					; MICKE HJÄLP 
+ROT_CL2:					
 	cpi		r18, 3
 	breq	ROT_L2_4
 ROT_L2_3:
@@ -1750,7 +1703,6 @@ ROT_L2_4:
 	and		r17, r20
 	st		Z+,  r17
 	ld		r17, Z
-	;or		r17, r19
 	and		r17, r20
 	st		Z,   r17
 
@@ -1822,7 +1774,6 @@ ROT_PYRAMID_1:
 	st		Z+,  r17
 	ld		r17, Z
 	or		r17, r16
-	;and		r17, r20
 	st		Z,   r17
 	
 	ldi		r17, $FF
@@ -1843,7 +1794,6 @@ ROT_PYRAMID_2:
 	ldi		ZL, LOW(POSX)
 	ld		r16, Z+
 	ld		r19, Z
-	;ld		r19, Z
 
 	com		r16
 	com		r19
@@ -1865,7 +1815,6 @@ ROT_PYRAMID_2:
 	and		r17, r23
 	st		Z+,  r17
 	ld		r17, Z
-	;or		r17, r19
 	and		r17, r20
 	st		Z,   r17
 	
@@ -1877,7 +1826,7 @@ ROT_PYRAMID_2:
 	st		Z,  r20
 
 	rjmp	END_ROTP
-ROT_CL3:					; MICKE HJÄLP 
+ROT_CL3:					
 	cpi		r18, 3
 	breq	ROT_PYRAMID_4
 ROT_PYRAMID_3:
@@ -1904,7 +1853,6 @@ ROT_PYRAMID_3:
 
 	ld		r17, Z
 	or		r17, r16
-;	and		r17, r20
 	st		Z+,  r17
 	ld		r17, Z
 	or		r17, r19
@@ -1947,7 +1895,6 @@ ROT_PYRAMID_4:
 	add		ZL, r17
 
 	ld		r17, Z
-	;or		r17, r16
 	and		r17, r20
 	st		Z+,  r17
 	ld		r17, Z
@@ -2026,7 +1973,6 @@ ROT_Z1_1:
 	st		Z+,  r17
 	ld		r17, Z
 	or		r17, r19
-	;and		r17, r20
 	st		Z,   r17
 	
 	ldi		r17, $FF
@@ -2047,7 +1993,6 @@ ROT_Z1_2:
 	ldi		ZL, LOW(POSX)
 	ld		r16, Z+
 	ld		r19, Z
-	;ld		r19, Z
 
 	com		r16
 	com		r19
@@ -2142,7 +2087,6 @@ ROT_Z2_1:
 	st		Z+,  r17
 	ld		r17, Z
 	or		r17, r19
-	;and		r17, r20
 	st		Z,   r17
 	
 	ldi		r17, $FF
@@ -2163,7 +2107,6 @@ ROT_Z2_2:
 	ldi		ZL, LOW(POSX)
 	ld		r16, Z+
 	ld		r19, Z
-	;ld		r19, Z
 
 	com		r16
 	com		r19
@@ -2234,7 +2177,7 @@ HW_INIT:
 	out		OCR1AH, r17		
 	out		OCR1AL, r16
 	
-	ldi		r16, $01
+	ldi		r16, $0B
 	out		DDRD, r16					
 	clr		r16
 	out		DDRA, r16								
@@ -2243,3 +2186,4 @@ HW_INIT:
 	ret
 
 
+	GG:		.db $C3, $DF, $DF, $DF, $D3, $DB, $DB, $C3, $C3, $DF, $DF, $DF, $D3, $DB, $DB, $C3
