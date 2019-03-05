@@ -100,7 +100,7 @@ VMEM_SET:
 	rjmp	VMEM_SET
 	ret
 
-GAME_OVER:
+/*GAME_OVER:
 	push	ZH
 	push	ZL
 	push	r17
@@ -110,7 +110,7 @@ GAME_OVER:
 	out		TCCR1B, r16	
 
 	clr		r16
-/*GG_SET_DISP:					; FUNGERAR NU
+GG_SET_DISP:					; FUNGERAR NU
 	ldi		ZH, HIGH(GG*2)
 	ldi		ZL, LOW(GG*2)
 	add		ZL, r16
@@ -672,9 +672,11 @@ CHECK_IF_LOST:
 	cpi		r16, $FF
 	breq	END_LOSS_CHECK
 LOST:
+	sbi		PORTD, 3
 	;rcall	GAME_OVER	
 	rcall	VMEM_INIT
 END_LOSS_CHECK:
+	cbi		PORTD, 3
 	pop		r16
 	pop		ZL
 	pop		ZH
@@ -1124,7 +1126,7 @@ ROTATE:
 
 	ldi		ZH, HIGH(POSY)
 	ldi		ZL, LOW(POSY)
-	subi	ZL, -1
+	subi	ZL, -1				; För hårt villkor?
 	ld		r16, Z
 	cpi		r16, $0F
 	breq	END_ROTATE
