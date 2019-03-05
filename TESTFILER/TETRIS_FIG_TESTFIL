@@ -648,12 +648,14 @@ CHECK_LOOP:
 	brne	CHECKING_COLL
 	rjmp	END_CHECK
 HIT:
+	sbi		PIND, 0
 	ldi		r20, $01
 	call	CHECK_ROW_FILLED
 	call	CHECK_IF_LOST
 	call	BUILD_BLOCK
 	;call	BUILD_BLOCK_Z1
 END_CHECK:
+	cbi		PIND, 0
 	pop		LOOPCOUNTER
 	pop		r16
 	pop		r19
