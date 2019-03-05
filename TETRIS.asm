@@ -648,12 +648,14 @@ CHECK_LOOP:
 	brne	CHECKING_COLL
 	rjmp	END_CHECK
 HIT:
+	sbi		PORTD, 0
 	ldi		r20, $01
 	call	CHECK_ROW_FILLED
 	call	CHECK_IF_LOST
 	call	BUILD_BLOCK
 	;call	BUILD_BLOCK_Z1
 END_CHECK:
+	cbi		PORTD, 0
 	pop		LOOPCOUNTER
 	pop		r16
 	pop		r19
@@ -2231,7 +2233,9 @@ HW_INIT:
 	ldi		r16, $09	
 	out		OCR1AH, r17		
 	out		OCR1AL, r16
-						
+	
+	ldi		r16, $01
+	out		DDRD, r16					
 	clr		r16
 	out		DDRA, r16								
 	sei
