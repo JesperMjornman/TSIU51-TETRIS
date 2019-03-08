@@ -69,7 +69,6 @@ COLD:
 
 WARM:
 	;rcall	GAME_OVER
-	;rcall	VMEM_INIT
 	rcall	BUILD_BLOCK
 
 START:
@@ -646,9 +645,9 @@ CHECK_LOOP:
 HIT:
 	sbi		PORTD, 0
 	ldi		r20, $01
-	call	CHECK_ROW_FILLED
-	call	CHECK_IF_LOST
-	call	BUILD_BLOCK
+	rcall	CHECK_ROW_FILLED
+	rcall	CHECK_IF_LOST
+	rcall	BUILD_BLOCK
 END_CHECK:
 	cbi		PORTD, 0
 	pop		LOOPCOUNTER
@@ -759,30 +758,39 @@ BUILD_BLOCK:
 	ldi		ZH, HIGH(SEED)
 	ldi		ZL, LOW(SEED)
 	ld		r16, Z
-
+	com		r16
+	mov		r17, r16
+	subi	r17, 12
+	andi	r17, $F0
 MOD_2:
 	lsr		r16
 	inc		LOOPCOUNTER
 	cpi		LOOPCOUNTER, 5
 	brne	MOD_2
+	com		r16
+	sub		r16, r17
+	;eor		r16, r17
 	
-	sbrc	r16, 5
-	call	BUILD_BLOCK_Z1
+	sbrs	r16, 6
+	rcall	BUILD_BLOCK_Z2
+
+	sbrs	r16, 5
+	rcall	BUILD_BLOCK_Z1
 
 	sbrs	r16, 4
-	call	BUILD_BLOCK_PYRAMID
+	rcall	BUILD_BLOCK_PYRAMID 
 
 	sbrs	r16, 3
-	call	BUILD_BLOCK_L1
+	rcall	BUILD_BLOCK_L1
 
 	sbrs	r16, 2
-	call	BUILD_BLOCK_L2
+	rcall	BUILD_BLOCK_L2
 
 	sbrs	r16, 1
-	call	BUILD_BLOCK_I
+	rcall	BUILD_BLOCK_I
 
 	sbrs	r16, 0
-	call	BUILD_BLOCK_SQUARE
+	rcall	BUILD_BLOCK_SQUARE
 
 	pop		LOOPCOUNTER
 	pop		r17
@@ -1116,7 +1124,6 @@ ROTATE:
 	push	ZL
 	push	r16
 	push	r17
-	push	r18
 	push	BOOLEAN					;Rensa några register som inte används
 	clr		BOOLEAN
 
@@ -1126,7 +1133,7 @@ ROTATE:
 
 	ldi		ZH, HIGH(POSY)
 	ldi		ZL, LOW(POSY)
-	subi	ZL, -1
+	subi	ZL, -1				; För hårt villkor?
 	ld		r16, Z
 	cpi		r16, $0F
 	breq	END_ROTATE
@@ -1178,9 +1185,8 @@ ROTATE:
 	clr		r17
 	st		Z, r17			
 END_ROTATE:
-	call	WAIT_RELEASE
+  ;  call	WAIT_RELEASE
 	pop		BOOLEAN
-	pop		r18
 	pop		r17
 	pop		r16
 	pop		ZL
@@ -1674,12 +1680,13 @@ ROT_L2_3:
 	rjmp	END_ROTL2
 ROT_L2_4:
 	ldi		r20, $EF
-	ldi		r23, $E7
+	ldi		r23, $CF;$E7
 
 	rcall	COMPENSATE
 
 	ldi		ZH, HIGH(POSX)
 	ldi		ZL, LOW(POSX)
+	ld		r16, Z+
 	ld		r16, Z+
 	ld		r19, Z
 
@@ -1695,14 +1702,15 @@ ROT_L2_4:
 	add		ZL, r17
 
 	ld		r17, Z
-	or		r17, r16
+	;or		r17, r16
 	and		r17, r23
 	st		Z+,  r17
 	ld		r17, Z
-	or		r17, r19
+	or		r17, r16
 	and		r17, r20
 	st		Z+,  r17
 	ld		r17, Z
+	or		r17, r19
 	and		r17, r20
 	st		Z,   r17
 
@@ -2014,17 +2022,22 @@ ROT_Z1_2:
 	and		r17, r23
 	st		Z+,  r17
 	ld		r17, Z
-	ldi		r20, $F7
+	;or		r17, r16
+	com		r20
+	lsr		r20
+	com		r20
 	and		r17, r20
 	st		Z,   r17
 	
 	ldi		ZH, HIGH(POSX)
 	ldi		ZL, LOW(POSX)
-	ldi		r20, $EF
+	mov		r19, r20
+	com		r20
+	lsl		r20
+	com		r20
 	st		Z+, r20
 	st		Z+, r23
-	ldi		r20, $F7
-	st		Z,  r20
+	st		Z,  r19
 
 END_ROTZ1:
 	pop		r20
@@ -2128,17 +2141,21 @@ ROT_Z2_2:
 	and		r17, r23
 	st		Z+,  r17
 	ld		r17, Z
-	ldi		r20, $EF
+	com		r20
+	lsl		r20
+	com		r20
 	and		r17, r20
 	st		Z,   r17
 	
 	ldi		ZH, HIGH(POSX)
 	ldi		ZL, LOW(POSX)
-	ldi		r20, $F7
+	mov		r19, r20
+	com		r20
+	lsr		r20
+	com		r20
 	st		Z+, r20
 	st		Z+, r23
-	ldi		r20, $EF
-	st		Z,  r20
+	st		Z,  r19
 
 END_ROTZ2:
 	pop		r20
