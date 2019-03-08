@@ -68,7 +68,7 @@ COLD:
 	call	HW_INIT
 
 WARM:
-	;rcall	GAME_OVER
+	rcall	GAME_OVER
 	rcall	BUILD_BLOCK
 
 START:
@@ -99,11 +99,11 @@ VMEM_SET:
 	rjmp	VMEM_SET
 	ret
 
-/*GAME_OVER:
+GAME_OVER:
 	push	ZH
 	push	ZL
-	push	r17
 	push	r19
+	push	r16
 
 	ldi		r16, (0 << CS11 | 0 << CS10 | 0 << CS12| 0 << WGM12)	
 	out		TCCR1B, r16	
@@ -118,6 +118,7 @@ GG_SET_DISP:					; FUNGERAR NU
 	ldi		ZL, LOW(VMEM)
 	add		ZL, r16
 	st		Z , r19
+	ld		r19, Z
 	inc		r16
 	cpi		r16, $10
 	brne	GG_SET_DISP
@@ -126,14 +127,15 @@ GG_DONE:
 	sbis	PINA, 0
 	rjmp	GG_DONE
 	rcall	VMEM_INIT
-	ldi		r16, (1 << CS11 | 0 << CS10 | 0 << CS12| 1 << WGM12)	
-	out		TCCR1B, r16	
+	rcall	HW_INIT
+	;ldi		r16, (1 << CS11 | 0 << CS10 | 0 << CS12| 1 << WGM12)	
+	;out		TCCR1B, r16	
 
 	pop		r16
 	pop		r19
 	pop		ZL
 	pop		ZH
-	ret */
+	ret 
 	
   ;-----------------------------
   ;--- MOVEMENT - LEFT
