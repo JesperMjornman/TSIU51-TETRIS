@@ -107,22 +107,29 @@ GAME_OVER:
 
 	ldi		r16, (0 << CS11 | 0 << CS10 | 0 << CS12| 0 << WGM12)	
 	out		TCCR1B, r16	
-
+	;GG:		.db $C3, $DF, $DF, $DF, $D3, $DB, $DB, $C3, $C3, $DF, $DF, $DF, $D3, $DB, $DB, $C3
 	clr		r16
+	clr		r19
 GG_SET_DISP:					; FUNGERAR NU
-	ldi		ZH, HIGH(GG*2)
-	ldi		ZL, LOW(GG*2)
-	add		ZL, r16
-	lpm		r19, Z
 	ldi		ZH, HIGH(VMEM)
 	ldi		ZL, LOW(VMEM)
-	add		ZL, r16
-	st		Z , r19
-	ld		r19, Z
-	inc		r16
-	cpi		r16, $10
+	ldi		r16, $C3
+	st		Z+ , r16
+	ldi		r16, $DF
+	st		Z+, r16
+	st		Z+, r16
+	st		Z+, r16
+	ldi		r16, $D3
+	st		Z+, r16
+	ldi		r16, $DB
+	st		Z+, r16
+	st		Z+, r16
+	ldi		r16, $C3
+	st		Z+, r16
+	inc		r19
+	cpi		r19, 2
 	brne	GG_SET_DISP
-
+		
 GG_DONE:
 	sbis	PINA, 0
 	rjmp	GG_DONE
@@ -2179,9 +2186,9 @@ HW_INIT:
 	out		SPCR,r17
 	cbi		PORTB, 0
 
-	ldi		r16, (1 << CS01)
+	ldi		r16, (1 << CS01)										; MUX
 	out		TCCR0, r16
-	ldi		r16, (1 << CS11 | 0 << CS10 | 0 << CS12| 1 << WGM12)	;	fclk / 8
+	ldi		r16, (1 << CS11 | 0 << CS10 | 0 << CS12| 1 << WGM12)	;	fclk / 8 Gravity
 
 	out		TCCR1B, r16	
 	ldi		r16, (1 << TOIE0 | 1 << OCIE1B)
