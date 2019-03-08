@@ -64,11 +64,14 @@ COLD:
 	ldi		r16, $10
 	st		Z, r16
 
-	rcall	VMEM_INIT
+	rcall	GAME_OVER
+	;rcall	VMEM_INIT
 	call	HW_INIT
+	rcall	GG_OVER
 
 WARM:
-	rcall	GAME_OVER
+	
+	rcall	VMEM_INIT
 	rcall	BUILD_BLOCK
 
 START:
@@ -124,24 +127,24 @@ GG_SET_DISP:					; FUNGERAR NU
 	ldi		r16, $DB
 	st		Z+, r16
 	st		Z+, r16
-	ldi		r16, $C3
+	ldi		r16, $FF
 	st		Z+, r16
 	inc		r19
 	cpi		r19, 2
 	brne	GG_SET_DISP
-		
-GG_DONE:
-	sbis	PINA, 0
-	rjmp	GG_DONE
-	rcall	VMEM_INIT
-	rcall	HW_INIT
-	;ldi		r16, (1 << CS11 | 0 << CS10 | 0 << CS12| 1 << WGM12)	
-	;out		TCCR1B, r16	
 
 	pop		r16
 	pop		r19
 	pop		ZL
 	pop		ZH
+
+	ret
+GG_DONE:
+	sbis	PINA, 0
+	rjmp	GG_DONE
+	;rcall	HW_INIT
+	ldi		r16, (1 << CS11 | 0 << CS10 | 0 << CS12| 1 << WGM12)	
+	out		TCCR1B, r16
 	ret 
 	
   ;-----------------------------
