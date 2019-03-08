@@ -68,7 +68,6 @@ COLD:
 	call	HW_INIT
 
 WARM:
-	;rcall	GAME_OVER
 	rcall	BUILD_BLOCK
 
 START:
@@ -99,41 +98,50 @@ VMEM_SET:
 	rjmp	VMEM_SET
 	ret
 
-/*GAME_OVER:
+GAME_OVER:
 	push	ZH
 	push	ZL
-	push	r17
 	push	r19
+	push	r16
 
 	ldi		r16, (0 << CS11 | 0 << CS10 | 0 << CS12| 0 << WGM12)	
 	out		TCCR1B, r16	
-
+	;GG:		.db $C3, $DF, $DF, $DF, $D3, $DB, $DB, $C3, $C3, $DF, $DF, $DF, $D3, $DB, $DB, $C3
 	clr		r16
+	clr		r19
 GG_SET_DISP:					; FUNGERAR NU
-	ldi		ZH, HIGH(GG*2)
-	ldi		ZL, LOW(GG*2)
-	add		ZL, r16
-	lpm		r19, Z
 	ldi		ZH, HIGH(VMEM)
 	ldi		ZL, LOW(VMEM)
-	add		ZL, r16
-	st		Z , r19
-	inc		r16
-	cpi		r16, $10
+	ldi		r16, $C3
+	st		Z+ , r16
+	ldi		r16, $DF
+	st		Z+, r16
+	st		Z+, r16
+	st		Z+, r16
+	ldi		r16, $D3
+	st		Z+, r16
+	ldi		r16, $DB
+	st		Z+, r16
+	st		Z+, r16
+	ldi		r16, $FF
+	st		Z+, r16
+	inc		r19
+	cpi		r19, 2
 	brne	GG_SET_DISP
-
-GG_DONE:
-	sbis	PINA, 0
-	rjmp	GG_DONE
-	rcall	VMEM_INIT
-	ldi		r16, (1 << CS11 | 0 << CS10 | 0 << CS12| 1 << WGM12)	
-	out		TCCR1B, r16	
 
 	pop		r16
 	pop		r19
 	pop		ZL
 	pop		ZH
-	ret */
+
+	ret
+GG_DONE:
+	sbis	PINA, 0
+	rjmp	GG_DONE
+	;rcall	HW_INIT
+	ldi		r16, (1 << CS11 | 0 << CS10 | 0 << CS12| 1 << WGM12)	
+	out		TCCR1B, r16
+	ret 
 	
   ;-----------------------------
   ;--- MOVEMENT - LEFT
@@ -758,17 +766,18 @@ BUILD_BLOCK:
 	ldi		ZH, HIGH(SEED)
 	ldi		ZL, LOW(SEED)
 	ld		r16, Z
-	com		r16
+	;com		r16
 	mov		r17, r16
-	subi	r17, 12
-	andi	r17, $F0
+	com		r17
 MOD_2:
-	lsr		r16
+	lsr		r17
 	inc		LOOPCOUNTER
 	cpi		LOOPCOUNTER, 5
 	brne	MOD_2
-	com		r16
+	rol		r17
+	com		r17
 	sub		r16, r17
+	rol		r16
 	;eor		r16, r17
 	
 	sbrs	r16, 6
@@ -2176,9 +2185,9 @@ HW_INIT:
 	out		SPCR,r17
 	cbi		PORTB, 0
 
-	ldi		r16, (1 << CS01)
+	ldi		r16, (1 << CS01)										; MUX
 	out		TCCR0, r16
-	ldi		r16, (1 << CS11 | 0 << CS10 | 0 << CS12| 1 << WGM12)	;	fclk / 8
+	ldi		r16, (1 << CS11 | 0 << CS10 | 0 << CS12| 1 << WGM12)	;	fclk / 8 Gravity
 
 	out		TCCR1B, r16	
 	ldi		r16, (1 << TOIE0 | 1 << OCIE1B)
