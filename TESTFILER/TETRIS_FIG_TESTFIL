@@ -766,8 +766,10 @@ MOD_2:
 	inc		LOOPCOUNTER
 	cpi		LOOPCOUNTER, 5
 	brne	MOD_2
+	rol		r17
 	com		r17
 	sub		r16, r17
+	rol		r16
 	;eor		r16, r17
 	
 	sbrs	r16, 6
