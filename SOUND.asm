@@ -13,33 +13,60 @@
 
 	START:
 	sbic	PINA, 1 ; PIN 39
-	call	PLAY2
+	call	FULL_ROW
 	
 	sbic	PINA, 2 ; PIN 38
-	call	PLAY3
+	call	LOST
 
 
 
 	END_START:
 	rjmp	START
 
-	 PLAY2:
-	 ldi	r16, $2A
+	FULL_ROW:
+	 ldi	r16, $10
+	SOUND_LOOP1:
+	 sbi	PORTC, 1
+	 call	DELAY1
+	 cbi	PORTC, 1
+	 call	DELAY1
+	 dec	r16
+	 cpi	r16, 0
+	 brne	SOUND_LOOP1
+	 ret
+	DELAY1:
+	 push	r18
+	 push	r17
+	 ldi	r18, 10
+	delayYttreLoop1:
+	 ldi	r17,$7D
+	delayInreLoop1:
+	 dec	r17
+	 brne	delayInreLoop1
+	 dec	r18
+	 brne	delayYttreLoop1
+	 pop	r17
+	 pop	r18
+	 rcall	WAIT
+	 ret
+
+	 LOST:
+	 ldi	r16, $3c
 	SOUND_LOOP2:
 	 sbi	PORTC, 1
-	 call	 delay2
+	 call	DELAY2
 	 cbi	PORTC, 1
-	 call	delay2
+	 call	DELAY2
 	 dec	r16
 	 cpi	r16, 0
 	 brne	SOUND_LOOP2
-	 ret
+	 rjmp	LOST2
 	DELAY2:
 	 push	r18
 	 push	r17
 	 ldi	r18, 10
 	delayYttreLoop2:
-	 ldi	r17,$FF
+	 ldi	r17,$DF
 	delayInreLoop2:
 	 dec	r17
 	 brne	delayInreLoop2
@@ -47,26 +74,25 @@
 	 brne	delayYttreLoop2
 	 pop	r17
 	 pop	r18
-	 rcall	WAIT
 	 ret
 
-	 PLAY3:
+	 LOST2:
 	 ldi	r16, $7D
 	SOUND_LOOP3:
 	 sbi	PORTC, 1
-	 call	delay3
+	 call	DELAY3
 	 cbi	PORTC, 1
-	 call	delay3
+	 call	DELAY3
 	 dec	r16
 	 cpi	r16, 0
 	 brne	SOUND_LOOP3
-	 ret
+	 rjmp	LOST3
 	DELAY3:
 	 push	r18
 	 push	r17
 	 ldi	r18, 10
 	delayYttreLoop3:
-	 ldi	r17,$FF
+	 ldi	r17,$EF
 	delayInreLoop3:
 	 dec	r17
 	 brne	delayInreLoop3
@@ -74,12 +100,36 @@
 	 brne	delayYttreLoop3
 	 pop	r17
 	 pop	r18
+	 ret
+	 
+	 LOST3:
+	 ldi	r16, $FF
+	SOUND_LOOP4:
+	 sbi	PORTC, 1
+	 call	DELAY4
+	 cbi	PORTC, 1
+	 call	DELAY4
+	 dec	r16
+	 cpi	r16, 0
+	 brne	SOUND_LOOP4
+	 ret
+	DELAY4:
+	 push	r18
+	 push	r17
+	 ldi	r18, 10
+	delayYttreLoop4:
+	 ldi	r17,$Ff
+	delayInreLoop4:
+	 dec	r17
+	 brne	delayInreLoop4
+	 dec	r18
+	 brne	delayYttreLoop4
+	 pop	r17
+	 pop	r18
 	 rcall	WAIT
 	 ret
 
 	WAIT:
-	sbic	PINA,0
-	rjmp	WAIT
 	sbic	PINA,1
 	rjmp	WAIT
 	sbic	PINA,2 
