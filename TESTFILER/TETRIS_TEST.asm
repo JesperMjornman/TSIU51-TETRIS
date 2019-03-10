@@ -65,10 +65,10 @@ COLD:
 	st		Z, r16
 
 	rcall	VMEM_INIT
+	;rcall	GAME_OVER
 	call	HW_INIT
-
+	;rcall	VMEM_INIT
 WARM:
-	rcall	GAME_OVER
 	rcall	BUILD_BLOCK
 
 START:
@@ -102,38 +102,38 @@ VMEM_SET:
 GAME_OVER:
 	push	ZH
 	push	ZL
-	push	r17
 	push	r19
+	push	r16
 
-	ldi		r16, (0 << CS11 | 0 << CS10 | 0 << CS12| 0 << WGM12)	
-	out		TCCR1B, r16	
-
+	;GG:		.db $C3, $DF, $DF, $DF, $D3, $DB, $DB, $C3, $C3, $DF, $DF, $DF, $D3, $DB, $DB, $C3
 	clr		r16
+	clr		r19
 GG_SET_DISP:					; FUNGERAR NU
-	ldi		ZH, HIGH(GG*2)
-	ldi		ZL, LOW(GG*2)
-	add		ZL, r16
-	lpm		r19, Z
 	ldi		ZH, HIGH(VMEM)
 	ldi		ZL, LOW(VMEM)
-	add		ZL, r16
-	st		Z , r19
-	inc		r16
-	cpi		r16, $10
+	ldi		r16, $C3
+	st		Z+ , r16
+	ldi		r16, $DF
+	st		Z+, r16
+	st		Z+, r16
+	st		Z+, r16
+	ldi		r16, $D3
+	st		Z+, r16
+	ldi		r16, $DB
+	st		Z+, r16
+	st		Z+, r16
+	ldi		r16, $FF
+	st		Z+, r16
+	inc		r19
+	cpi		r19, 2
 	brne	GG_SET_DISP
-
-GG_DONE:
-	sbis	PINA, 0
-	rjmp	GG_DONE
-	rcall	VMEM_INIT
-	ldi		r16, (1 << CS11 | 0 << CS10 | 0 << CS12| 1 << WGM12)	
-	out		TCCR1B, r16	
 
 	pop		r16
 	pop		r19
 	pop		ZL
 	pop		ZH
-	ret 
+
+	ret
 	
   ;-----------------------------
   ;--- MOVEMENT - LEFT
@@ -645,9 +645,9 @@ CHECK_LOOP:
 HIT:
 	sbi		PORTD, 0
 	ldi		r20, $01
-	call	CHECK_ROW_FILLED
-	call	CHECK_IF_LOST
-	call	BUILD_BLOCK
+	rcall	CHECK_ROW_FILLED
+	rcall	CHECK_IF_LOST
+	rcall	BUILD_BLOCK
 END_CHECK:
 	cbi		PORTD, 0
 	pop		LOOPCOUNTER
@@ -758,30 +758,40 @@ BUILD_BLOCK:
 	ldi		ZH, HIGH(SEED)
 	ldi		ZL, LOW(SEED)
 	ld		r16, Z
-
+	;com		r16
+	mov		r17, r16
+	com		r17
 MOD_2:
-	lsr		r16
+	lsr		r17
 	inc		LOOPCOUNTER
 	cpi		LOOPCOUNTER, 5
 	brne	MOD_2
+	rol		r17
+	com		r17
+	sub		r16, r17
+	rol		r16
+	;eor		r16, r17
 	
-	sbrc	r16, 5
-	call	BUILD_BLOCK_Z1
+	sbrs	r16, 6
+	rcall	BUILD_BLOCK_Z2
+
+	sbrs	r16, 5
+	rcall	BUILD_BLOCK_Z1
 
 	sbrs	r16, 4
-	call	BUILD_BLOCK_PYRAMID
+	rcall	BUILD_BLOCK_PYRAMID 
 
 	sbrs	r16, 3
-	call	BUILD_BLOCK_L1
+	rcall	BUILD_BLOCK_L1
 
 	sbrs	r16, 2
-	call	BUILD_BLOCK_L2
+	rcall	BUILD_BLOCK_L2
 
 	sbrs	r16, 1
-	call	BUILD_BLOCK_I
+	rcall	BUILD_BLOCK_I
 
 	sbrs	r16, 0
-	call	BUILD_BLOCK_SQUARE
+	rcall	BUILD_BLOCK_SQUARE
 
 	pop		LOOPCOUNTER
 	pop		r17
@@ -1115,7 +1125,6 @@ ROTATE:
 	push	ZL
 	push	r16
 	push	r17
-	push	r18
 	push	BOOLEAN					;Rensa några register som inte används
 	clr		BOOLEAN
 
@@ -1136,9 +1145,15 @@ ROTATE:
 	call	BLOCKED_LEFT		; |
 	sbrc	BOOLEAN, 0			; |
 	rjmp	END_ROTATE			; |
+								; |
 	sbrc	r17, 0				; |
+	rcall	BORDER_L			; |
+	sbrc	BOOLEAN, 0			; |
 	rjmp	END_ROTATE			; |
+								; |
 	sbrc	r17, 7				; |
+	rcall	BORDER_R			; |
+	sbrc	BOOLEAN, 0			; |
 	rjmp	END_ROTATE			; |
 
 	ldi		ZH, HIGH(FIGURE)
@@ -1177,14 +1192,40 @@ ROTATE:
 	clr		r17
 	st		Z, r17			
 END_ROTATE:
-	call	WAIT_RELEASE
+  ;  call	WAIT_RELEASE
 	pop		BOOLEAN
-	pop		r18
 	pop		r17
 	pop		r16
 	pop		ZL
 	pop		ZH
 	reti
+
+BORDER_R:
+	push	ZH
+	push	ZL
+
+	clr		BOOLEAN
+	rcall	MOV_LEFT
+	rcall	BLOCKED_LEFT
+	sbrc	BOOLEAN, 0
+	rcall	MOV_RIGHT
+
+	pop		ZL
+	pop		ZH
+	ret
+BORDER_L:
+	push	ZH
+	push	ZL
+
+	clr		BOOLEAN
+	rcall	MOV_RIGHT
+	rcall	BLOCKED_RIGHT
+	sbrc	BOOLEAN, 0
+	rcall	MOV_LEFT
+
+	pop		ZL
+	pop		ZH
+	ret
 
 COMPENSATE:
 	push	ZH
@@ -1673,12 +1714,13 @@ ROT_L2_3:
 	rjmp	END_ROTL2
 ROT_L2_4:
 	ldi		r20, $EF
-	ldi		r23, $E7
+	ldi		r23, $CF;$E7
 
 	rcall	COMPENSATE
 
 	ldi		ZH, HIGH(POSX)
 	ldi		ZL, LOW(POSX)
+	ld		r16, Z+
 	ld		r16, Z+
 	ld		r19, Z
 
@@ -1694,14 +1736,15 @@ ROT_L2_4:
 	add		ZL, r17
 
 	ld		r17, Z
-	or		r17, r16
+	;or		r17, r16
 	and		r17, r23
 	st		Z+,  r17
 	ld		r17, Z
-	or		r17, r19
+	or		r17, r16
 	and		r17, r20
 	st		Z+,  r17
 	ld		r17, Z
+	or		r17, r19
 	and		r17, r20
 	st		Z,   r17
 
@@ -2013,17 +2056,22 @@ ROT_Z1_2:
 	and		r17, r23
 	st		Z+,  r17
 	ld		r17, Z
-	ldi		r20, $F7
+	;or		r17, r16
+	com		r20
+	lsr		r20
+	com		r20
 	and		r17, r20
 	st		Z,   r17
 	
 	ldi		ZH, HIGH(POSX)
 	ldi		ZL, LOW(POSX)
-	ldi		r20, $EF
+	mov		r19, r20
+	com		r20
+	lsl		r20
+	com		r20
 	st		Z+, r20
 	st		Z+, r23
-	ldi		r20, $F7
-	st		Z,  r20
+	st		Z,  r19
 
 END_ROTZ1:
 	pop		r20
@@ -2127,17 +2175,21 @@ ROT_Z2_2:
 	and		r17, r23
 	st		Z+,  r17
 	ld		r17, Z
-	ldi		r20, $EF
+	com		r20
+	lsl		r20
+	com		r20
 	and		r17, r20
 	st		Z,   r17
 	
 	ldi		ZH, HIGH(POSX)
 	ldi		ZL, LOW(POSX)
-	ldi		r20, $F7
+	mov		r19, r20
+	com		r20
+	lsr		r20
+	com		r20
 	st		Z+, r20
 	st		Z+, r23
-	ldi		r20, $EF
-	st		Z,  r20
+	st		Z,  r19
 
 END_ROTZ2:
 	pop		r20
@@ -2158,9 +2210,9 @@ HW_INIT:
 	out		SPCR,r17
 	cbi		PORTB, 0
 
-	ldi		r16, (1 << CS01)
+	ldi		r16, (1 << CS01)										; MUX
 	out		TCCR0, r16
-	ldi		r16, (1 << CS11 | 0 << CS10 | 0 << CS12| 1 << WGM12)	;	fclk / 8
+	ldi		r16, (1 << CS11 | 0 << CS10 | 0 << CS12| 1 << WGM12)	;	fclk / 8 Gravity
 
 	out		TCCR1B, r16	
 	ldi		r16, (1 << TOIE0 | 1 << OCIE1B)
