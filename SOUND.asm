@@ -51,7 +51,7 @@
 	 ret
 
 	 LOST:
-	 ldi	r16, $3c
+	 ldi	r16, $64
 	SOUND_LOOP2:
 	 sbi	PORTC, 1
 	 call	DELAY2
@@ -77,6 +77,7 @@
 	 ret
 
 	 LOST2:
+	 call	NO_SOUND
 	 ldi	r16, $7D
 	SOUND_LOOP3:
 	 sbi	PORTC, 1
@@ -103,6 +104,7 @@
 	 ret
 	 
 	 LOST3:
+	 call	NO_SOUND
 	 ldi	r16, $FF
 	SOUND_LOOP4:
 	 sbi	PORTC, 1
@@ -135,3 +137,15 @@
 	sbic	PINA,2 
 	rjmp	WAIT
 	ret
+
+NO_SOUND:
+    ldi  r18, 6
+    ldi  r19, 19
+    ldi  r20, 174
+L1: dec  r20
+    brne L1
+    dec  r19
+    brne L1
+    dec  r18
+    brne L1
+    ret
