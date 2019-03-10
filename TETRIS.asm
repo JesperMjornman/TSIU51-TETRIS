@@ -65,8 +65,9 @@ COLD:
 	st		Z, r16
 
 	rcall	VMEM_INIT
+	;rcall	GAME_OVER
 	call	HW_INIT
-
+	;rcall	VMEM_INIT
 WARM:
 	rcall	BUILD_BLOCK
 
@@ -104,8 +105,6 @@ GAME_OVER:
 	push	r19
 	push	r16
 
-	ldi		r16, (0 << CS11 | 0 << CS10 | 0 << CS12| 0 << WGM12)	
-	out		TCCR1B, r16	
 	;GG:		.db $C3, $DF, $DF, $DF, $D3, $DB, $DB, $C3, $C3, $DF, $DF, $DF, $D3, $DB, $DB, $C3
 	clr		r16
 	clr		r19
@@ -135,13 +134,6 @@ GG_SET_DISP:					; FUNGERAR NU
 	pop		ZH
 
 	ret
-GG_DONE:
-	sbis	PINA, 0
-	rjmp	GG_DONE
-	;rcall	HW_INIT
-	ldi		r16, (1 << CS11 | 0 << CS10 | 0 << CS12| 1 << WGM12)	
-	out		TCCR1B, r16
-	ret 
 	
   ;-----------------------------
   ;--- MOVEMENT - LEFT
@@ -151,11 +143,14 @@ MOV_LEFT:
 	push	ZL
 	push	r16
 	push	r17
+	push	r22
 	push	BOOLEAN 
 	push	LOOPCOUNTER
+
 	clr		BOOLEAN
 	ldi		LOOPCOUNTER, BLOCK_SIZE
 
+	ldi		r22, $01
 	rcall	BORDER_CHECK		; Check borders before movement
 	rcall	BLOCKED_LEFT
 MOVING_L:
@@ -203,9 +198,10 @@ END_MOVL:
 	lsr		r16
 	st		Z, r16
 
-	rcall	WAIT_RELEASE	
+	rcall	WAIT_RELEASE
 	pop		LOOPCOUNTER
 	pop		BOOLEAN
+	pop		r22	
 	pop		r17
 	pop		r16
 	pop		ZL
@@ -220,14 +216,15 @@ MOV_RIGHT:
 	push	ZL
 	push	r16
 	push	r17
+	push	r22
 	push	BOOLEAN
 	push	LOOPCOUNTER
 	clr		BOOLEAN
 	ldi		LOOPCOUNTER, BLOCK_SIZE
-
+	clr		r22
 	rcall	BORDER_CHECK
-	sbrs	BOOLEAN, 0
 	rcall	BLOCKED_RIGHT
+
 MOVING_R:
 	dec		LOOPCOUNTER
 	
@@ -276,6 +273,7 @@ END_MOVR:
 	rcall	WAIT_RELEASE	
 	pop		LOOPCOUNTER
 	pop		BOOLEAN
+	pop		r22
 	pop		r17
 	pop		r16
 	pop		ZL
@@ -302,8 +300,8 @@ BORDER_CHECK:
 	add		ZL, LOOPCOUNTER
 	ld		r16, Z
 
-	sbis	PINA, 1
-	rjmp	CHECKING_L
+	cpi		r22, $01
+	breq	CHECKING_L
  CHECKING_R:
 	mov		r17, r16
 	andi	r17, $80		; Border check
@@ -1153,9 +1151,15 @@ ROTATE:
 	call	BLOCKED_LEFT		; |
 	sbrc	BOOLEAN, 0			; |
 	rjmp	END_ROTATE			; |
+								; |
 	sbrc	r17, 0				; |
+	rcall	BORDER_L			; |
+	sbrc	BOOLEAN, 0			; |
 	rjmp	END_ROTATE			; |
+								; |
 	sbrc	r17, 7				; |
+	rcall	BORDER_R			; |
+	sbrc	BOOLEAN, 0			; |
 	rjmp	END_ROTATE			; |
 
 	ldi		ZH, HIGH(FIGURE)
@@ -1201,6 +1205,23 @@ END_ROTATE:
 	pop		ZL
 	pop		ZH
 	reti
+
+BORDER_R:
+	clr		BOOLEAN
+	rcall	MOV_LEFT
+	rcall	BLOCKED_LEFT
+	sbrc	BOOLEAN, 0
+	rcall	MOV_RIGHT
+
+	ret
+BORDER_L:
+	clr		BOOLEAN
+	rcall	MOV_RIGHT
+	rcall	BLOCKED_RIGHT
+	sbrc	BOOLEAN, 0
+	rcall	MOV_LEFT
+
+	ret
 
 COMPENSATE:
 	push	ZH
