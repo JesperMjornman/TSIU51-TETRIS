@@ -1,0 +1,32 @@
+Header: Kurs. Datum. Version. - Albin
+Footer: Sidnummer. - Albin
+Framsida – Bild från PP, Namn, Grupp 1. Tetris. (Räknas ej som sida) - Albin
+Sammanfattning. – (Räknas ej som sida) - ALBIN
+Innehållsförteckning. - ALBIN
+Inledning/(Vad är Tetris? Syfte) – Vad, varför, hur. - ALBIN 
+-	Ordlista - ALLIHOPA
+Kravspecifikation - ALBIN
+Krav: Rotation, Ljud, Figurer, Radrensning, Styrdon, Tetris.
+Bör: Scoreboard, Färg, Dynamisk hastighet.
+Komponentlista ( PP bilden och förklaring)- DANIEL
+Hårdvara // Kopplingsschema, förklaring. Vad gör, Hur kopplat, Vad är.  - DANIEL
+LedMatris (Omvänt, RGB rad, FF släckt) - DANIEL
+-	SPI, HC595, Skiftregister, RGBA - DANIEL
+Atmega16A + Pinschema - ELIN
+Högtalare - ELIN
+Knappar – ELIN 
+Reset + Motstånd - ELIN
+Tillvägagångssätt och planering - ELIN
+Planeringsschema? - ELIN
+Riktigt JSP, CPU 1 - JESPER
+Spellogik, CPU 1 + Avbrott - JESPER
+JSP, CPU 2 - JESPER
+Ljudlogik, CPU 2 - JESPER
+RESULTAT – SUCCESS - JESPER
+DISKUSSION, Lärdomar (Klantskallar) För/-nackdelar Hårdkodning. Skärm felvänd. - ALLIHOPA
+-	Förbättring 
+Källförteckning - ALLIHOPA
+Bilagor – CODE – ALLIHOPA
+
+
+
