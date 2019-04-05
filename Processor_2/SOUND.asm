@@ -1,11 +1,4 @@
-/*
- * SOUND.asm
- *
- *  Created: 2019-03-05 13:16:25
- *   Author: danma256
- */ 
-
-
+	INIT:
 	clr		r16
 	out		DDRA, r16
 	ldi		r16, $FF
