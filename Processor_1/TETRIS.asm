@@ -1,12 +1,3 @@
-/*
- * Hej.asm
- *
- *  Created: 2019-03-04 10:13:54
- *   Author: elith238
- */ 
-
-
- 
 
 	.org	0
 	rjmp	COLD
