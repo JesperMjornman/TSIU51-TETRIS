@@ -1,1 +1,1 @@
-I denna mapp ligger diverse testfiler som i slutskedet är irrelevanta och utdaterade.
+I denna mapp ligger diverse testfiler som är irrelevanta och utdaterade.
