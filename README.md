@@ -1,5 +1,6 @@
 # TSIU51-TETRIS
-  - TETRIS    : Grundprogrammet
+  - Processor 1 : Spellogik
+  - Processor 2 : Ljud
 # UTRUSTNING
   - 8x16 lysdiodmatris
   - Atmega16A
